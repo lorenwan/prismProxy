@@ -38,3 +38,9 @@ Thumbs.db
 # Database
 *.db
 *.sqlite
+
+# Binaries
+proxy
+server
+prismproxy-server-*
+desktop/src-tauri/bin/
