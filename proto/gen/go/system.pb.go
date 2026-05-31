@@ -433,6 +433,67 @@ func (x *SystemStatus) GetProxyAddr() string {
 	return ""
 }
 
+// 系统代理状态
+type SystemProxyStatus struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Enabled       bool                   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`                     // 是否启用
+	ProxyAddr     string                 `protobuf:"bytes,2,opt,name=proxy_addr,json=proxyAddr,proto3" json:"proxy_addr,omitempty"` // 代理地址
+	Error         string                 `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`                          // 错误信息
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SystemProxyStatus) Reset() {
+	*x = SystemProxyStatus{}
+	mi := &file_system_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SystemProxyStatus) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SystemProxyStatus) ProtoMessage() {}
+
+func (x *SystemProxyStatus) ProtoReflect() protoreflect.Message {
+	mi := &file_system_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SystemProxyStatus.ProtoReflect.Descriptor instead.
+func (*SystemProxyStatus) Descriptor() ([]byte, []int) {
+	return file_system_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *SystemProxyStatus) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *SystemProxyStatus) GetProxyAddr() string {
+	if x != nil {
+		return x.ProxyAddr
+	}
+	return ""
+}
+
+func (x *SystemProxyStatus) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
 type ProxyStatusResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Running       bool                   `protobuf:"varint,1,opt,name=running,proto3" json:"running,omitempty"`
@@ -444,7 +505,7 @@ type ProxyStatusResponse struct {
 
 func (x *ProxyStatusResponse) Reset() {
 	*x = ProxyStatusResponse{}
-	mi := &file_system_proto_msgTypes[4]
+	mi := &file_system_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -456,7 +517,7 @@ func (x *ProxyStatusResponse) String() string {
 func (*ProxyStatusResponse) ProtoMessage() {}
 
 func (x *ProxyStatusResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_system_proto_msgTypes[4]
+	mi := &file_system_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -469,7 +530,7 @@ func (x *ProxyStatusResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProxyStatusResponse.ProtoReflect.Descriptor instead.
 func (*ProxyStatusResponse) Descriptor() ([]byte, []int) {
-	return file_system_proto_rawDescGZIP(), []int{4}
+	return file_system_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ProxyStatusResponse) GetRunning() bool {
@@ -504,7 +565,7 @@ type CAGenerateResponse struct {
 
 func (x *CAGenerateResponse) Reset() {
 	*x = CAGenerateResponse{}
-	mi := &file_system_proto_msgTypes[5]
+	mi := &file_system_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -516,7 +577,7 @@ func (x *CAGenerateResponse) String() string {
 func (*CAGenerateResponse) ProtoMessage() {}
 
 func (x *CAGenerateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_system_proto_msgTypes[5]
+	mi := &file_system_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -529,7 +590,7 @@ func (x *CAGenerateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CAGenerateResponse.ProtoReflect.Descriptor instead.
 func (*CAGenerateResponse) Descriptor() ([]byte, []int) {
-	return file_system_proto_rawDescGZIP(), []int{5}
+	return file_system_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CAGenerateResponse) GetSuccess() bool {
@@ -563,7 +624,7 @@ type CAExportResponse struct {
 
 func (x *CAExportResponse) Reset() {
 	*x = CAExportResponse{}
-	mi := &file_system_proto_msgTypes[6]
+	mi := &file_system_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -575,7 +636,7 @@ func (x *CAExportResponse) String() string {
 func (*CAExportResponse) ProtoMessage() {}
 
 func (x *CAExportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_system_proto_msgTypes[6]
+	mi := &file_system_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -588,7 +649,7 @@ func (x *CAExportResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CAExportResponse.ProtoReflect.Descriptor instead.
 func (*CAExportResponse) Descriptor() ([]byte, []int) {
-	return file_system_proto_rawDescGZIP(), []int{6}
+	return file_system_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *CAExportResponse) GetCertData() []byte {
@@ -654,7 +715,12 @@ const file_system_proto_rawDesc = "" +
 	" \x01(\x05R\x0egoroutineCount\x12#\n" +
 	"\rproxy_running\x18\v \x01(\bR\fproxyRunning\x12\x1d\n" +
 	"\n" +
-	"proxy_addr\x18\f \x01(\tR\tproxyAddr\"Y\n" +
+	"proxy_addr\x18\f \x01(\tR\tproxyAddr\"b\n" +
+	"\x11SystemProxyStatus\x12\x18\n" +
+	"\aenabled\x18\x01 \x01(\bR\aenabled\x12\x1d\n" +
+	"\n" +
+	"proxy_addr\x18\x02 \x01(\tR\tproxyAddr\x12\x14\n" +
+	"\x05error\x18\x03 \x01(\tR\x05error\"Y\n" +
 	"\x13ProxyStatusResponse\x12\x18\n" +
 	"\arunning\x18\x01 \x01(\bR\arunning\x12\x12\n" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr\x12\x14\n" +
@@ -665,14 +731,17 @@ const file_system_proto_rawDesc = "" +
 	"\x05error\x18\x03 \x01(\tR\x05error\"E\n" +
 	"\x10CAExportResponse\x12\x1b\n" +
 	"\tcert_data\x18\x01 \x01(\fR\bcertData\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error2\xc0\x03\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error2\x99\x05\n" +
 	"\rSystemService\x128\n" +
 	"\tGetStatus\x12\x11.prismproxy.Empty\x1a\x18.prismproxy.SystemStatus\x126\n" +
 	"\vGetSettings\x12\x11.prismproxy.Empty\x1a\x14.prismproxy.Settings\x12<\n" +
 	"\x0eUpdateSettings\x12\x14.prismproxy.Settings\x1a\x14.prismproxy.Settings\x12@\n" +
 	"\n" +
 	"StartProxy\x12\x11.prismproxy.Empty\x1a\x1f.prismproxy.ProxyStatusResponse\x12?\n" +
-	"\tStopProxy\x12\x11.prismproxy.Empty\x1a\x1f.prismproxy.ProxyStatusResponse\x12?\n" +
+	"\tStopProxy\x12\x11.prismproxy.Empty\x1a\x1f.prismproxy.ProxyStatusResponse\x12E\n" +
+	"\x11EnableSystemProxy\x12\x11.prismproxy.Empty\x1a\x1d.prismproxy.SystemProxyStatus\x12F\n" +
+	"\x12DisableSystemProxy\x12\x11.prismproxy.Empty\x1a\x1d.prismproxy.SystemProxyStatus\x12H\n" +
+	"\x14GetSystemProxyStatus\x12\x11.prismproxy.Empty\x1a\x1d.prismproxy.SystemProxyStatus\x12?\n" +
 	"\n" +
 	"GenerateCA\x12\x11.prismproxy.Empty\x1a\x1e.prismproxy.CAGenerateResponse\x12;\n" +
 	"\bExportCA\x12\x11.prismproxy.Empty\x1a\x1c.prismproxy.CAExportResponseB\x1cZ\x1aprismproxy/proto/gen/go;pbb\x06proto3"
@@ -689,39 +758,46 @@ func file_system_proto_rawDescGZIP() []byte {
 	return file_system_proto_rawDescData
 }
 
-var file_system_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_system_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_system_proto_goTypes = []any{
 	(*ProxySettings)(nil),       // 0: prismproxy.ProxySettings
 	(*AISettings)(nil),          // 1: prismproxy.AISettings
 	(*Settings)(nil),            // 2: prismproxy.Settings
 	(*SystemStatus)(nil),        // 3: prismproxy.SystemStatus
-	(*ProxyStatusResponse)(nil), // 4: prismproxy.ProxyStatusResponse
-	(*CAGenerateResponse)(nil),  // 5: prismproxy.CAGenerateResponse
-	(*CAExportResponse)(nil),    // 6: prismproxy.CAExportResponse
-	(*Empty)(nil),               // 7: prismproxy.Empty
+	(*SystemProxyStatus)(nil),   // 4: prismproxy.SystemProxyStatus
+	(*ProxyStatusResponse)(nil), // 5: prismproxy.ProxyStatusResponse
+	(*CAGenerateResponse)(nil),  // 6: prismproxy.CAGenerateResponse
+	(*CAExportResponse)(nil),    // 7: prismproxy.CAExportResponse
+	(*Empty)(nil),               // 8: prismproxy.Empty
 }
 var file_system_proto_depIdxs = []int32{
-	0, // 0: prismproxy.Settings.proxy:type_name -> prismproxy.ProxySettings
-	1, // 1: prismproxy.Settings.ai:type_name -> prismproxy.AISettings
-	7, // 2: prismproxy.SystemService.GetStatus:input_type -> prismproxy.Empty
-	7, // 3: prismproxy.SystemService.GetSettings:input_type -> prismproxy.Empty
-	2, // 4: prismproxy.SystemService.UpdateSettings:input_type -> prismproxy.Settings
-	7, // 5: prismproxy.SystemService.StartProxy:input_type -> prismproxy.Empty
-	7, // 6: prismproxy.SystemService.StopProxy:input_type -> prismproxy.Empty
-	7, // 7: prismproxy.SystemService.GenerateCA:input_type -> prismproxy.Empty
-	7, // 8: prismproxy.SystemService.ExportCA:input_type -> prismproxy.Empty
-	3, // 9: prismproxy.SystemService.GetStatus:output_type -> prismproxy.SystemStatus
-	2, // 10: prismproxy.SystemService.GetSettings:output_type -> prismproxy.Settings
-	2, // 11: prismproxy.SystemService.UpdateSettings:output_type -> prismproxy.Settings
-	4, // 12: prismproxy.SystemService.StartProxy:output_type -> prismproxy.ProxyStatusResponse
-	4, // 13: prismproxy.SystemService.StopProxy:output_type -> prismproxy.ProxyStatusResponse
-	5, // 14: prismproxy.SystemService.GenerateCA:output_type -> prismproxy.CAGenerateResponse
-	6, // 15: prismproxy.SystemService.ExportCA:output_type -> prismproxy.CAExportResponse
-	9, // [9:16] is the sub-list for method output_type
-	2, // [2:9] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	0,  // 0: prismproxy.Settings.proxy:type_name -> prismproxy.ProxySettings
+	1,  // 1: prismproxy.Settings.ai:type_name -> prismproxy.AISettings
+	8,  // 2: prismproxy.SystemService.GetStatus:input_type -> prismproxy.Empty
+	8,  // 3: prismproxy.SystemService.GetSettings:input_type -> prismproxy.Empty
+	2,  // 4: prismproxy.SystemService.UpdateSettings:input_type -> prismproxy.Settings
+	8,  // 5: prismproxy.SystemService.StartProxy:input_type -> prismproxy.Empty
+	8,  // 6: prismproxy.SystemService.StopProxy:input_type -> prismproxy.Empty
+	8,  // 7: prismproxy.SystemService.EnableSystemProxy:input_type -> prismproxy.Empty
+	8,  // 8: prismproxy.SystemService.DisableSystemProxy:input_type -> prismproxy.Empty
+	8,  // 9: prismproxy.SystemService.GetSystemProxyStatus:input_type -> prismproxy.Empty
+	8,  // 10: prismproxy.SystemService.GenerateCA:input_type -> prismproxy.Empty
+	8,  // 11: prismproxy.SystemService.ExportCA:input_type -> prismproxy.Empty
+	3,  // 12: prismproxy.SystemService.GetStatus:output_type -> prismproxy.SystemStatus
+	2,  // 13: prismproxy.SystemService.GetSettings:output_type -> prismproxy.Settings
+	2,  // 14: prismproxy.SystemService.UpdateSettings:output_type -> prismproxy.Settings
+	5,  // 15: prismproxy.SystemService.StartProxy:output_type -> prismproxy.ProxyStatusResponse
+	5,  // 16: prismproxy.SystemService.StopProxy:output_type -> prismproxy.ProxyStatusResponse
+	4,  // 17: prismproxy.SystemService.EnableSystemProxy:output_type -> prismproxy.SystemProxyStatus
+	4,  // 18: prismproxy.SystemService.DisableSystemProxy:output_type -> prismproxy.SystemProxyStatus
+	4,  // 19: prismproxy.SystemService.GetSystemProxyStatus:output_type -> prismproxy.SystemProxyStatus
+	6,  // 20: prismproxy.SystemService.GenerateCA:output_type -> prismproxy.CAGenerateResponse
+	7,  // 21: prismproxy.SystemService.ExportCA:output_type -> prismproxy.CAExportResponse
+	12, // [12:22] is the sub-list for method output_type
+	2,  // [2:12] is the sub-list for method input_type
+	2,  // [2:2] is the sub-list for extension type_name
+	2,  // [2:2] is the sub-list for extension extendee
+	0,  // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_system_proto_init() }
@@ -736,7 +812,7 @@ func file_system_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_system_proto_rawDesc), len(file_system_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
