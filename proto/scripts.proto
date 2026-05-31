@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package prismproxy;
+
+option go_package = "prismproxy/proto/gen/go;pb";
+
+import "common.proto";
+
+// 脚本阶段
+enum ScriptPhase {
+  SCRIPT_PHASE_UNSPECIFIED = 0;
+  SCRIPT_PHASE_REQUEST = 1;
+  SCRIPT_PHASE_RESPONSE = 2;
+}
+
+// 脚本
+message Script {
+  string id = 1;
+  string name = 2;
+  string content = 3;
+  ScriptPhase phase = 4;
+  bool enabled = 5;
+  int32 priority = 6;
+  string language = 7;
+  string created_at = 8;
+  string updated_at = 9;
+}
+
+// 脚本执行记录
+message ScriptExecution {
+  string script_id = 1;
+  string transaction_id = 2;
+  bool success = 3;
+  string output = 4;
+  int64 duration_ms = 5;
+  string error = 6;
+  string executed_at = 7;
+}
+
+// 脚本列表响应
+message ScriptListResponse {
+  repeated Script scripts = 1;
+}
+
+// 执行脚本请求
+message ExecuteScriptRequest {
+  string script_id = 1;
+  string transaction_id = 2;
+  map<string, string> data = 3;
+}
+
+// 脚本服务
+service ScriptsService {
+  // 获取脚本列表
+  rpc List(Empty) returns (ScriptListResponse);
+  // 获取单个脚本
+  rpc Get(ScriptGetRequest) returns (Script);
+  // 创建脚本
+  rpc Create(Script) returns (Script);
+  // 更新脚本
+  rpc Update(Script) returns (Script);
+  // 删除脚本
+  rpc Delete(ScriptDeleteRequest) returns (Empty);
+  // 启用/禁用脚本
+  rpc Toggle(ScriptToggleRequest) returns (ToggleResponse);
+  // 执行脚本
+  rpc Execute(ExecuteScriptRequest) returns (ScriptExecution);
+}
+
+message ScriptGetRequest {
+  string id = 1;
+}
+
+message ScriptDeleteRequest {
+  string id = 1;
+}
+
+message ScriptToggleRequest {
+  string id = 1;
+}
+
+message ToggleResponse {
+  bool enabled = 1;
+}

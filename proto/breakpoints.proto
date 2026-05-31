@@ -1,0 +1,122 @@
+syntax = "proto3";
+
+package prismproxy;
+
+option go_package = "prismproxy/proto/gen/go;pb";
+
+import "common.proto";
+import "traffic.proto";
+import "rules.proto";
+
+// 断点阶段
+enum BreakPhase {
+  BREAK_PHASE_UNSPECIFIED = 0;
+  BREAK_PHASE_REQUEST = 1;   // 请求阶段断点
+  BREAK_PHASE_RESPONSE = 2;  // 响应阶段断点
+}
+
+// 断点动作类型
+enum BreakActionType {
+  BREAK_ACTION_UNSPECIFIED = 0;
+  BREAK_ACTION_PAUSE = 1;       // 暂停等待用户操作
+  BREAK_ACTION_MODIFY = 2;      // 修改后继续
+  BREAK_ACTION_DROP = 3;        // 丢弃请求/响应
+  BREAK_ACTION_DELAY = 4;       // 延迟后继续
+}
+
+// 断点会话状态
+enum SessionStatus {
+  SESSION_STATUS_UNSPECIFIED = 0;
+  SESSION_STATUS_WAITING = 1;   // 等待用户操作
+  SESSION_STATUS_RESOLVED = 2;  // 已处理
+  SESSION_STATUS_DROPPED = 3;   // 已丢弃
+  SESSION_STATUS_TIMEOUT = 4;   // 已超时
+}
+
+// 断点动作配置
+message BreakAction {
+  BreakActionType type = 1;      // 动作类型
+  ModifySpec modifications = 2;  // 修改规范 (复用 rules.proto)
+}
+
+// 断点定义
+message Breakpoint {
+  string id = 1;             // 断点 ID
+  string name = 2;           // 断点名称
+  bool enabled = 3;          // 是否启用
+  BreakPhase phase = 4;      // 断点阶段
+  RuleMatch match = 5;       // 匹配条件 (复用 rules.proto)
+  BreakAction action = 6;    // 断点动作
+  int32 hit_count = 7;       // 命中次数
+  string created_at = 8;     // 创建时间
+  string updated_at = 9;     // 更新时间
+}
+
+// 断点会话（一次断点命中后的交互实例）
+message BreakpointSession {
+  string id = 1;                    // 会话 ID
+  string breakpoint_id = 2;         // 关联断点 ID
+  int64 transaction_id = 3;         // 关联事务 ID
+  BreakPhase phase = 4;             // 断点阶段
+  SessionStatus status = 5;         // 会话状态
+  TrafficEntry original = 6;        // 原始流量数据
+  TrafficEntry modified = 7;        // 修改后的流量数据
+  string created_at = 8;            // 创建时间
+  string resolved_at = 9;           // 处理时间
+}
+
+// 断点事件 (WebSocket 推送)
+message BreakpointEvent {
+  string type = 1;                    // 事件类型: hit / resolve / timeout
+  BreakpointSession session = 2;     // 相关会话
+  string timestamp = 3;              // 事件时间
+}
+
+// 断点服务 RPC 定义
+service BreakpointsService {
+  // 获取断点列表
+  rpc List(Empty) returns (BreakpointListResponse);
+  // 获取单条断点
+  rpc Get(BreakpointGetRequest) returns (Breakpoint);
+  // 创建断点
+  rpc Create(Breakpoint) returns (Breakpoint);
+  // 更新断点
+  rpc Update(Breakpoint) returns (Breakpoint);
+  // 删除断点
+  rpc Delete(BreakpointDeleteRequest) returns (Empty);
+  // 切换断点启用状态
+  rpc Toggle(BreakpointToggleRequest) returns (Breakpoint);
+  // 获取活跃会话列表
+  rpc ListSessions(Empty) returns (BreakpointSessionListResponse);
+  // 处理会话（继续/丢弃/修改后继续）
+  rpc ResolveSession(ResolveSessionRequest) returns (BreakpointSession);
+  // 订阅断点事件 (服务端流)
+  rpc Subscribe(Empty) returns (stream BreakpointEvent);
+}
+
+message BreakpointListResponse {
+  repeated Breakpoint breakpoints = 1;
+}
+
+message BreakpointGetRequest {
+  string id = 1;
+}
+
+message BreakpointDeleteRequest {
+  string id = 1;
+}
+
+message BreakpointToggleRequest {
+  string id = 1;
+  bool enabled = 2;
+}
+
+message BreakpointSessionListResponse {
+  repeated BreakpointSession sessions = 1;
+}
+
+message ResolveSessionRequest {
+  string session_id = 1;         // 会话 ID
+  string action = 2;             // 动作: continue / drop / modify
+  TrafficEntry modified_data = 3; // 修改后的数据 (action=modify 时使用)
+}

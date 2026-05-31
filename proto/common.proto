@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package prismproxy;
+
+option go_package = "prismproxy/proto/gen/go;pb";
+
+// 空消息，用于无参数/无返回值的 RPC
+message Empty {}
+
+// 通用分页请求
+message Pagination {
+  int32 page = 1;      // 页码，从 1 开始
+  int32 page_size = 2; // 每页条数
+  string sort_by = 3;  // 排序字段
+  bool sort_desc = 4;  // 是否降序
+}
+
+// 通用分页响应头
+message PageMeta {
+  int32 page = 1;       // 当前页码
+  int32 page_size = 2;  // 每页条数
+  int64 total = 3;      // 总条数
+}
+
+// 通用键值对
+message KeyValue {
+  string key = 1;
+  string value = 2;
+  string description = 3;
+  bool enabled = 4;
+}
+
+// 时间范围
+message TimeRange {
+  string start = 1; // ISO 8601 格式
+  string end = 2;   // ISO 8601 格式
+}

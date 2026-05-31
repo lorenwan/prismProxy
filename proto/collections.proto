@@ -1,0 +1,156 @@
+syntax = "proto3";
+
+package prismproxy;
+
+option go_package = "prismproxy/proto/gen/go;pb";
+
+import "common.proto";
+
+// GraphQL 请求体
+message GraphQLBody {
+  string query = 1;      // GraphQL 查询语句
+  string variables = 2;  // 变量 (JSON 字符串)
+}
+
+// 请求体配置
+message RequestBody {
+  string type = 1;            // 类型: none / raw / json / xml / form / binary / graphql
+  string content = 2;         // 文本内容
+  string binary = 3;          // 二进制文件路径
+  GraphQLBody graphql = 4;    // GraphQL 内容
+}
+
+// 认证配置
+message AuthConfig {
+  string type = 1;                   // 认证类型: none / basic / bearer / api_key / oauth2
+  map<string, string> config = 2;    // 认证参数
+}
+
+// 测试断言
+message Test {
+  string name = 1;       // 测试名称
+  string type = 2;       // 断言类型: status / header / body / json_path / response_time
+  string target = 3;     // 目标字段
+  string operator = 4;   // 操作符: eq / neq / contains / matches / gt / lt
+  string value = 5;      // 期望值
+  bool enabled = 6;      // 是否启用
+}
+
+// API 请求定义
+message APIRequest {
+  string id = 1;                          // 请求 ID
+  string name = 2;                        // 请求名称
+  string method = 3;                      // HTTP 方法
+  string url = 4;                         // 请求 URL
+  repeated KeyValue headers = 5;          // 请求头
+  repeated KeyValue query_params = 6;     // 查询参数
+  RequestBody body = 7;                   // 请求体
+  AuthConfig auth = 8;                    // 认证配置
+  repeated Test tests = 9;               // 测试用例
+  repeated KeyValue variables = 10;       // 变量
+  string description = 11;               // 描述
+  map<string, string> metadata = 12;      // 元数据
+  string created_at = 13;                // 创建时间
+  string updated_at = 14;                // 更新时间
+}
+
+// 集合条目（文件夹或请求）
+message CollectionItem {
+  string id = 1;                        // 条目 ID
+  string type = 2;                      // 类型: folder / request
+  string name = 3;                      // 名称
+  APIRequest request = 4;               // API 请求 (type=request 时)
+  repeated CollectionItem items = 5;    // 子条目 (type=folder 时)
+  string created_at = 6;                // 创建时间
+  string updated_at = 7;                // 更新时间
+}
+
+// API 集合
+message Collection {
+  string id = 1;                         // 集合 ID
+  string name = 2;                       // 集合名称
+  string description = 3;               // 描述
+  string parent_id = 4;                 // 父集合 ID
+  repeated CollectionItem items = 5;     // 子条目
+  string created_at = 6;                // 创建时间
+  string updated_at = 7;                // 更新时间
+}
+
+// 测试执行结果
+message TestResult {
+  Test test = 1;          // 测试定义
+  bool passed = 2;        // 是否通过
+  string actual = 3;      // 实际值
+  string error = 4;       // 错误信息
+}
+
+// 请求执行结果
+message ExecutionResult {
+  string request_id = 1;               // 请求 ID
+  int32 status = 2;                    // HTTP 状态码
+  string status_text = 3;             // 状态文本
+  repeated KeyValue headers = 4;       // 响应头
+  string body = 5;                     // 响应体
+  string content_type = 6;            // Content-Type
+  int64 duration_ms = 7;              // 耗时 (毫秒)
+  int64 size = 8;                      // 响应大小
+  string error = 9;                    // 错误信息
+  repeated TestResult test_results = 10; // 测试结果
+  string timestamp = 11;              // 执行时间
+}
+
+// 集合服务 RPC 定义
+service CollectionsService {
+  // 获取集合列表
+  rpc List(Empty) returns (CollectionListResponse);
+  // 获取单个集合
+  rpc Get(CollectionGetRequest) returns (Collection);
+  // 创建集合
+  rpc Create(Collection) returns (Collection);
+  // 更新集合
+  rpc Update(Collection) returns (Collection);
+  // 删除集合
+  rpc Delete(CollectionDeleteRequest) returns (Empty);
+  // 添加请求到集合
+  rpc AddRequest(AddRequestRequest) returns (CollectionItem);
+  // 更新请求
+  rpc UpdateRequest(UpdateRequestRequest) returns (APIRequest);
+  // 删除请求
+  rpc DeleteRequest(DeleteRequestRequest) returns (Empty);
+  // 执行请求
+  rpc ExecuteRequest(ExecuteRequestRequest) returns (ExecutionResult);
+}
+
+message CollectionListResponse {
+  repeated Collection collections = 1;
+}
+
+message CollectionGetRequest {
+  string id = 1;
+}
+
+message CollectionDeleteRequest {
+  string id = 1;
+}
+
+message AddRequestRequest {
+  string collection_id = 1;
+  string parent_item_id = 2;  // 可选，放入某个文件夹下
+  APIRequest request = 3;
+}
+
+message UpdateRequestRequest {
+  string collection_id = 1;
+  string item_id = 2;
+  APIRequest request = 3;
+}
+
+message DeleteRequestRequest {
+  string collection_id = 1;
+  string item_id = 2;
+}
+
+message ExecuteRequestRequest {
+  APIRequest request = 1;
+  string environment_id = 2;  // 使用的环境 ID
+}

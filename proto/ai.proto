@@ -1,0 +1,140 @@
+syntax = "proto3";
+
+package prismproxy;
+
+option go_package = "prismproxy/proto/gen/go;pb";
+
+import "common.proto";
+
+// LLM 聊天消息
+message ChatMessage {
+  string role = 1;     // 角色: system / user / assistant
+  string content = 2;  // 消息内容
+}
+
+// 聊天请求
+message ChatRequest {
+  repeated ChatMessage messages = 1; // 消息列表
+  string model = 2;                   // 模型名称（可选）
+  bool stream = 3;                    // 是否流式输出
+}
+
+// 流式响应块
+message ChatChunk {
+  string content = 1;   // 响应内容片段
+  bool done = 2;        // 是否结束
+  string provider = 3;  // 提供商名称
+}
+
+// Token 用量
+message Usage {
+  int32 prompt_tokens = 1;      // 提示词 token 数
+  int32 completion_tokens = 2;  // 生成 token 数
+  int32 total_tokens = 3;       // 总 token 数
+}
+
+// 聊天响应（非流式）
+message ChatResponse {
+  string content = 1;    // 完整响应内容
+  string provider = 2;   // 提供商名称
+  string model = 3;      // 模型名称
+  Usage usage = 4;       // Token 用量
+}
+
+// AI 检测到的问题
+message Issue {
+  string severity = 1;  // 严重程度: info / warning / error
+  string type = 2;      // 问题类型
+  string title = 3;     // 标题
+  string detail = 4;    // 详情
+}
+
+// AI 优化建议
+message Suggestion {
+  string category = 1;  // 建议类别: performance / security / best_practice
+  string title = 2;     // 标题
+  string detail = 3;    // 详情
+}
+
+// AI 流量分析结果
+message AnalysisResult {
+  string summary = 1;                   // 分析摘要
+  repeated Issue issues = 2;            // 发现的问题
+  repeated Suggestion suggestions = 3;  // 优化建议
+}
+
+// 安全发现
+message SecurityFinding {
+  string severity = 1;      // 严重程度: critical / high / medium / low / info
+  string category = 2;      // 分类: injection / auth / xss / csrf / etc
+  string title = 3;         // 标题
+  string description = 4;   // 描述
+  string location = 5;      // 发现位置
+  string remediation = 6;   // 修复建议
+}
+
+// 安全分析报告
+message SecurityReport {
+  string risk_level = 1;                    // 风险等级: critical / high / medium / low / safe
+  repeated SecurityFinding findings = 2;    // 安全发现列表
+  string summary = 3;                       // 总结
+}
+
+// 测试断言 (AI 生成)
+message Assertion {
+  string type = 1;       // 断言类型
+  string target = 2;     // 目标
+  string operator = 3;   // 操作符
+  string value = 4;      // 期望值
+}
+
+// AI 生成的测试用例
+message TestCase {
+  string name = 1;                     // 测试名称
+  string description = 2;             // 描述
+  string method = 3;                  // HTTP 方法
+  string url = 4;                     // 请求 URL
+  map<string, string> headers = 5;    // 请求头
+  string body = 6;                    // 请求体
+  repeated Assertion assertions = 7;  // 断言列表
+}
+
+// AI 服务 RPC 定义
+service AIService {
+  // 非流式聊天
+  rpc Chat(ChatRequest) returns (ChatResponse);
+  // 流式聊天
+  rpc StreamChat(ChatRequest) returns (stream ChatChunk);
+  // 分析流量数据
+  rpc AnalyzeTraffic(AnalyzeTrafficRequest) returns (AnalysisResult);
+  // 安全扫描
+  rpc SecurityScan(SecurityScanRequest) returns (SecurityReport);
+  // 生成测试用例
+  rpc GenerateTests(GenerateTestsRequest) returns (GenerateTestsResponse);
+  // 检查 AI 服务可用性
+  rpc CheckAvailability(Empty) returns (AvailabilityResponse);
+}
+
+message AnalyzeTrafficRequest {
+  int64 traffic_id = 1;   // 流量条目 ID
+  string question = 2;    // 用户提问（可选）
+}
+
+message SecurityScanRequest {
+  int64 traffic_id = 1;   // 流量条目 ID
+}
+
+message GenerateTestsRequest {
+  int64 traffic_id = 1;   // 流量条目 ID
+  int32 count = 2;        // 生成数量
+}
+
+message GenerateTestsResponse {
+  repeated TestCase tests = 1;
+}
+
+message AvailabilityResponse {
+  bool available = 1;           // 是否可用
+  string provider = 2;          // 当前提供商
+  repeated string providers = 3; // 可用提供商列表
+}

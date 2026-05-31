@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package prismproxy;
+
+option go_package = "prismproxy/proto/gen/go;pb";
+
+import "common.proto";
+
+// 认证数据 (用于代码生成)
+message AuthData {
+  string type = 1;       // 认证类型: none / basic / bearer / api_key
+  string username = 2;   // 用户名 (basic auth)
+  string password = 3;   // 密码 (basic auth)
+  string token = 4;      // Token (bearer)
+  string api_key = 5;    // API Key 名称
+  string api_value = 6;  // API Key 值
+  string location = 7;   // API Key 位置: header / query
+}
+
+// 代码生成请求
+message CodeGenRequest {
+  string method = 1;                // HTTP 方法
+  string url = 2;                   // 请求 URL
+  map<string, string> headers = 3;  // 请求头
+  map<string, string> query_params = 4; // 查询参数
+  string body = 5;                  // 请求体
+  string body_type = 6;            // 请求体类型: none / raw / json / xml / form
+  AuthData auth = 7;               // 认证信息
+  string language = 8;             // 目标语言: curl / python / go / javascript / java / php
+}
+
+// 代码生成结果
+message CodeGenResult {
+  string language = 1;   // 目标语言
+  string code = 2;       // 生成的代码
+  string filename = 3;   // 建议文件名
+}
+
+// 代码生成服务 RPC 定义
+service CodeGenService {
+  // 生成代码
+  rpc Generate(CodeGenRequest) returns (CodeGenResult);
+  // 获取支持的语言列表
+  rpc ListLanguages(Empty) returns (LanguageListResponse);
+}
+
+message LanguageListResponse {
+  repeated LanguageInfo languages = 1;
+}
+
+message LanguageInfo {
+  string id = 1;          // 语言标识: curl / python / go / javascript / java / php
+  string name = 2;        // 显示名称
+  string description = 3; // 描述
+}

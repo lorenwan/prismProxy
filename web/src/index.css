@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1b26;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3b4261;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #565f89;
+}
+
+/* 表格行选中效果 */
+.traffic-row-selected {
+  background: #283457 !important;
+}
+
+/* 状态码颜色 */
+.status-2xx { color: #9ece6a; }
+.status-3xx { color: #7aa2f7; }
+.status-4xx { color: #e0af68; }
+.status-5xx { color: #f7768e; }

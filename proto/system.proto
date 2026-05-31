@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package prismproxy;
+
+option go_package = "prismproxy/proto/gen/go;pb";
+
+import "common.proto";
+
+// 代理设置
+message ProxySettings {
+  int32 port = 1;               // 代理端口
+  string listen_addr = 2;       // 监听地址
+  bool enable_https = 3;        // 是否启用 HTTPS 代理
+  bool enable_mitm = 4;         // 是否启用 MITM
+  repeated string bypass = 5;   // 代理绕过列表
+}
+
+// AI 设置
+message AISettings {
+  string default_provider = 1;  // 默认提供商: openai / claude / ollama
+  string openai_api_key = 2;    // OpenAI API Key
+  string openai_base_url = 3;   // OpenAI Base URL
+  string openai_model = 4;      // OpenAI 模型
+  string claude_api_key = 5;    // Claude API Key
+  string claude_base_url = 6;   // Claude Base URL
+  string claude_model = 7;      // Claude 模型
+  string ollama_base_url = 8;   // Ollama Base URL
+  string ollama_model = 9;      // Ollama 模型
+}
+
+// 应用设置
+message Settings {
+  ProxySettings proxy = 1;       // 代理设置
+  AISettings ai = 2;             // AI 设置
+  string theme = 3;              // 主题: light / dark / auto
+  string language = 4;           // 语言: zh / en
+  bool enable_traffic_log = 5;   // 是否记录流量
+  int32 max_traffic_count = 6;   // 最大流量记录数
+  int32 traffic_ttl_hours = 7;   // 流量记录保留时间 (小时)
+}
+
+// 系统状态
+message SystemStatus {
+  string version = 1;            // 系统版本
+  string go_version = 2;         // Go 版本
+  string os = 3;                 // 操作系统
+  string arch = 4;               // CPU 架构
+  int64 uptime_seconds = 5;     // 运行时长 (秒)
+  int64 traffic_count = 6;       // 流量记录数
+  int32 rule_count = 7;          // 规则数
+  int32 breakpoint_count = 8;    // 断点数
+  int64 memory_usage_bytes = 9;  // 内存使用 (字节)
+  int32 goroutine_count = 10;    // Goroutine 数
+  bool proxy_running = 11;       // 代理是否运行中
+  string proxy_addr = 12;        // 代理地址
+}
+
+// 系统服务 RPC 定义
+service SystemService {
+  // 获取系统状态
+  rpc GetStatus(Empty) returns (SystemStatus);
+  // 获取设置
+  rpc GetSettings(Empty) returns (Settings);
+  // 更新设置
+  rpc UpdateSettings(Settings) returns (Settings);
+  // 启动代理
+  rpc StartProxy(Empty) returns (ProxyStatusResponse);
+  // 停止代理
+  rpc StopProxy(Empty) returns (ProxyStatusResponse);
+  // 生成 CA 证书
+  rpc GenerateCA(Empty) returns (CAGenerateResponse);
+  // 导出 CA 证书
+  rpc ExportCA(Empty) returns (CAExportResponse);
+}
+
+message ProxyStatusResponse {
+  bool running = 1;
+  string addr = 2;
+  string error = 3;
+}
+
+message CAGenerateResponse {
+  bool success = 1;
+  string cert_path = 2;
+  string error = 3;
+}
+
+message CAExportResponse {
+  bytes cert_data = 1;   // PEM 格式证书
+  string error = 2;
+}

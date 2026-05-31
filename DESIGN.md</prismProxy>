@@ -1,0 +1,1100 @@
+# PrismProxy - HTTP 调试工具详细设计
+
+## 项目概述
+
+PrismProxy 是一个类似 Reqable 的现代化 HTTP 调试和抓包工具，集成 AI 能力，支持 HTTP/HTTPS 代理、请求拦截、流量分析、API 测试等功能。
+
+## 技术栈
+
+- **后端**: Go + Gin + SQLite + WebSocket
+- **前端**: React + TypeScript + TailwindCSS
+- **桌面端**: Tauri (轻量级跨平台)
+- **AI**: OpenAI/Claude/Ollama 适配层
+
+---
+
+## 模块 1: 代理引擎 (Proxy Engine)
+
+### 目录结构
+```
+internal/proxy/
+├── engine.go          # 代理引擎主控
+├── http.go            # HTTP 代理处理
+├── https.go           # HTTPS MITM 代理
+├── websocket.go       # WebSocket 代理
+├── interceptor.go     # 请求/响应拦截器
+├── modifier.go        # 请求/响应修改器
+├── cert.go            # 证书管理
+└── transport.go       # 自定义 Transport
+```
+
+### 核心接口
+
+```go
+// Engine 代理引擎
+type Engine struct {
+    config      *Config
+    ca          *CertificateAuthority
+    interceptor *Interceptor
+    modifier    *Modifier
+    storage     *Storage
+    wsHub       *WebSocketHub
+    mu          sync.RWMutex
+    running     bool
+}
+
+// Config 代理配置
+type Config struct {
+    Port           int    `yaml:"port"`
+    MITMEnabled    bool   `yaml:"mitm_enabled"`
+    CaptureWS      bool   `yaml:"capture_websocket"`
+    MaxBodySize    int64  `yaml:"max_body_size"`     // 最大捕获 body 大小
+    ExcludeDomains []string `yaml:"exclude_domains"` // 排除的域名
+}
+
+// Interceptor 拦截器
+type Interceptor struct {
+    breakpoints map[string]*Breakpoint
+    rules       []*InterceptRule
+    mu          sync.RWMutex
+    pauseCh     map[string]chan *Transaction
+}
+
+// Modifier 修改器
+type Modifier struct {
+    rules []*ModifyRule
+    mu    sync.RWMutex
+}
+```
+
+### 处理流程
+
+```
+客户端请求 → 代理引擎 → 拦截器检查
+                           ↓
+                    [匹配断点?] → 是 → 暂停等待用户操作
+                           ↓ 否
+                    [匹配规则?] → 是 → 修改请求/响应
+                           ↓ 否
+                    转发请求 → 记录流量 → 返回响应
+```
+
+---
+
+## 模块 2: 流量管理器 (Traffic Manager)
+
+### 目录结构
+```
+internal/traffic/
+├── manager.go         # 流量管理主控
+├── collector.go       # 流量收集器
+├── analyzer.go        # 流量分析器
+├── filter.go          # 过滤器
+├── exporter.go        # 导出器
+└── models.go          # 数据模型
+```
+
+### 数据模型
+
+```go
+// Transaction 一次 HTTP 事务
+type Transaction struct {
+    ID            int64          `json:"id"`
+    Timestamp     time.Time      `json:"timestamp"`
+    Duration      int64          `json:"duration_ms"`
+    
+    // 请求信息
+    Method        string         `json:"method"`
+    URL           string         `json:"url"`
+    Host          string         `json:"host"`
+    Path          string         `json:"path"`
+    Scheme        string         `json:"scheme"`
+    Port          string         `json:"port"`
+    
+    // 请求数据
+    Request       *RequestData   `json:"request"`
+    
+    // 响应数据
+    Response      *ResponseData  `json:"response"`
+    
+    // 网络信息
+    ClientAddr    string         `json:"client_addr"`
+    ServerIP      string         `json:"server_ip"`
+    
+    // 元数据
+    Bookmarked    bool           `json:"bookmarked"`
+    Color         string         `json:"color"`
+    Notes         string         `json:"notes"`
+    Tags          []string       `json:"tags"`
+    
+    // AI 分析
+    AIAnalysis    *AIAnalysis    `json:"ai_analysis,omitempty"`
+}
+
+type RequestData struct {
+    Headers     http.Header    `json:"headers"`
+    Cookies     []*http.Cookie `json:"cookies"`
+    QueryParams url.Values     `json:"query_params"`
+    Body        []byte         `json:"body"`
+    BodySize    int64          `json:"body_size"`
+    ContentType string         `json:"content_type"`
+    Raw         []byte         `json:"raw"`
+}
+
+type ResponseData struct {
+    StatusCode  int            `json:"status_code"`
+    StatusText  string         `json:"status_text"`
+    Headers     http.Header    `json:"headers"`
+    Cookies     []*http.Cookie `json:"cookies"`
+    Body        []byte         `json:"body"`
+    BodySize    int64          `json:"body_size"`
+    ContentType string         `json:"content_type"`
+    Raw         []byte         `json:"raw"`
+}
+
+// Filter 流量过滤器
+type Filter struct {
+    Method      []string    `json:"method,omitempty"`
+    Host        []string    `json:"host,omitempty"`
+    Path        string      `json:"path,omitempty"`       // 支持正则
+    StatusCode  []int       `json:"status_code,omitempty"`
+    ContentType []string    `json:"content_type,omitempty"`
+    MinDuration int64       `json:"min_duration,omitempty"`
+    MaxDuration int64       `json:"max_duration,omitempty"`
+    TimeRange   *TimeRange  `json:"time_range,omitempty"`
+    Search      string      `json:"search,omitempty"`     // 全文搜索
+    Bookmarked  *bool       `json:"bookmarked,omitempty"`
+    Tags        []string    `json:"tags,omitempty"`
+}
+```
+
+### 过滤器查询构建
+
+```go
+// BuildSQL 构建 SQL 查询
+func (f *Filter) BuildSQL() (string, []interface{}) {
+    conditions := []string{}
+    args := []interface{}{}
+    
+    if len(f.Method) > 0 {
+        placeholders := make([]string, len(f.Method))
+        for i, m := range f.Method {
+            placeholders[i] = "?"
+            args = append(args, m)
+        }
+        conditions = append(conditions, fmt.Sprintf("method IN (%s)", strings.Join(placeholders, ",")))
+    }
+    
+    if f.Search != "" {
+        conditions = append(conditions, "(url LIKE ? OR host LIKE ? OR notes LIKE ?)")
+        search := "%" + f.Search + "%"
+        args = append(args, search, search, search)
+    }
+    
+    // ... 其他条件
+    
+    where := ""
+    if len(conditions) > 0 {
+        where = "WHERE " + strings.Join(conditions, " AND ")
+    }
+    
+    return where, args
+}
+```
+
+---
+
+## 模块 3: 规则引擎 (Rule Engine)
+
+### 目录结构
+```
+internal/rules/
+├── engine.go          # 规则引擎主控
+├── matcher.go         # 规则匹配器
+├── actions.go         # 规则动作
+├── models.go          # 数据模型
+└── store.go           # 规则存储
+```
+
+### 数据模型
+
+```go
+// Rule 规则定义
+type Rule struct {
+    ID          string      `json:"id"`
+    Name        string      `json:"name"`
+    Enabled     bool        `json:"enabled"`
+    Priority    int         `json:"priority"`    // 优先级，数字越小优先级越高
+    Match       RuleMatch   `json:"match"`
+    Action      RuleAction  `json:"action"`
+    CreatedAt   time.Time   `json:"created_at"`
+    UpdatedAt   time.Time   `json:"updated_at"`
+}
+
+// RuleMatch 匹配条件
+type RuleMatch struct {
+    // URL 匹配
+    URLPattern  string   `json:"url_pattern"`   // 正则表达式
+    URLWildcard string   `json:"url_wildcard"`  // 通配符
+    
+    // 主机匹配
+    HostPattern string   `json:"host_pattern"`
+    
+    // 方法匹配
+    Methods     []string `json:"methods"`
+    
+    // Header 匹配
+    HeaderMatch *HeaderMatch `json:"header_match,omitempty"`
+    
+    // Content-Type 匹配
+    ContentType []string `json:"content_type,omitempty"`
+}
+
+type HeaderMatch struct {
+    Name    string `json:"name"`
+    Value   string `json:"value"`
+    MatchType string `json:"match_type"` // exact, contains, regex
+}
+
+// RuleAction 规则动作
+type RuleAction struct {
+    Type        ActionType  `json:"type"`
+    
+    // Map Local 相关
+    LocalPath   string      `json:"local_path,omitempty"`
+    
+    // Map Remote 相关
+    RemoteURL   string      `json:"remote_url,omitempty"`
+    
+    // 修改请求/响应
+    Modify      *ModifySpec `json:"modify,omitempty"`
+    
+    // 阻止请求
+    BlockResponse *BlockSpec `json:"block_response,omitempty"`
+    
+    // 延迟
+    DelayMs     int         `json:"delay_ms,omitempty"`
+}
+
+type ActionType string
+
+const (
+    ActionMapLocal      ActionType = "map_local"
+    ActionMapRemote     ActionType = "map_remote"
+    ActionModifyRequest ActionType = "modify_request"
+    ActionModifyResponse ActionType = "modify_response"
+    ActionBlock         ActionType = "block"
+    ActionDelay         ActionType = "delay"
+    ActionMock          ActionType = "mock"
+)
+
+type ModifySpec struct {
+    AddHeaders    map[string]string `json:"add_headers,omitempty"`
+    RemoveHeaders []string          `json:"remove_headers,omitempty"`
+    SetHeaders    map[string]string `json:"set_headers,omitempty"`
+    AddQuery      map[string]string `json:"add_query,omitempty"`
+    RemoveQuery   []string          `json:"remove_query,omitempty"`
+    SetQuery      map[string]string `json:"set_query,omitempty"`
+    BodyReplace   string            `json:"body_replace,omitempty"`
+}
+
+type BlockSpec struct {
+    StatusCode int               `json:"status_code"`
+    Headers    map[string]string `json:"headers,omitempty"`
+    Body       string            `json:"body,omitempty"`
+}
+```
+
+---
+
+## 模块 4: 断点调试器 (Breakpoint Debugger)
+
+### 目录结构
+```
+internal/debugger/
+├── debugger.go        # 调试器主控
+├── breakpoint.go      # 断点管理
+├── inspector.go       # 请求/响应检查器
+├── editor.go          # 在线编辑器
+└── models.go          # 数据模型
+```
+
+### 数据模型
+
+```go
+// Breakpoint 断点
+type Breakpoint struct {
+    ID          string         `json:"id"`
+    Enabled     bool           `json:"enabled"`
+    Phase        Phase         `json:"phase"`        // request, response
+    Match        RuleMatch     `json:"match"`         // 复用规则匹配
+    Action       BreakAction   `json:"action"`
+    HitCount     int           `json:"hit_count"`
+    CreatedAt    time.Time     `json:"created_at"`
+}
+
+type Phase string
+
+const (
+    PhaseRequest  Phase = "request"
+    PhaseResponse Phase = "response"
+)
+
+type BreakAction struct {
+    Type         string        `json:"type"`          // pause, auto_modify, drop
+    AutoModify   *ModifySpec   `json:"auto_modify,omitempty"`
+}
+
+// BreakpointSession 断点会话
+type BreakpointSession struct {
+    ID            string        `json:"id"`
+    BreakpointID  string        `json:"breakpoint_id"`
+    TransactionID int64         `json:"transaction_id"`
+    Phase         Phase         `json:"phase"`
+    Status        string        `json:"status"`       // paused, modified, released, dropped
+    Original      *Transaction  `json:"original"`
+    Modified      *Transaction  `json:"modified,omitempty"`
+    CreatedAt     time.Time     `json:"created_at"`
+    ResolvedAt    *time.Time    `json:"resolved_at,omitempty"`
+}
+```
+
+### 断点工作流
+
+```
+1. 用户设置断点 (匹配条件 + 动作)
+2. 请求到达 → 匹配断点
+3. 创建断点会话 → 暂停请求
+4. 通过 WebSocket 通知前端
+5. 用户操作:
+   a. 查看请求/响应详情
+   b. 修改请求/响应
+   c. 释放请求继续
+   d. 丢弃请求
+6. 执行相应动作
+7. 记录断点会话结果
+```
+
+---
+
+## 模块 5: AI 服务 (AI Service)
+
+### 目录结构
+```
+internal/ai/
+├── service.go         # AI 服务主控
+├── provider/
+│   ├── manager.go     # Provider 管理器
+│   ├── openai.go      # OpenAI 适配器
+│   ├── claude.go      # Claude 适配器
+│   ├── ollama.go      # Ollama 适配器
+│   └── custom.go      # 自定义 Provider
+├── features/
+│   ├── analyzer.go    # 流量分析
+│   ├── nlquery.go     # 自然语言查询
+│   ├── testgen.go     # 测试生成
+│   ├── security.go    # 安全检测
+│   ├── docgen.go      # 文档生成
+│   ├── mockgen.go     # Mock 生成
+│   └── assistant.go   # 智能助手
+├── prompt/
+│   ├── manager.go     # 提示词管理
+│   └── templates/     # 提示词模板
+│       ├── analysis.txt
+│       ├── security.txt
+│       ├── testgen.txt
+│       └── assistant.txt
+└── models.go          # 数据模型
+```
+
+### 数据模型
+
+```go
+// AIProvider AI 提供商接口
+type AIProvider interface {
+    Name() string
+    Chat(ctx context.Context, messages []Message) (*Response, error)
+    StreamChat(ctx context.Context, messages []Message) (<-chan *Chunk, error)
+    IsAvailable() bool
+}
+
+type Message struct {
+    Role    string `json:"role"`
+    Content string `json:"content"`
+}
+
+type Response struct {
+    Content string      `json:"content"`
+    Usage   TokenUsage  `json:"usage"`
+}
+
+type Chunk struct {
+    Delta   string `json:"delta"`
+    Done    bool   `json:"done"`
+}
+
+type TokenUsage struct {
+    PromptTokens     int `json:"prompt_tokens"`
+    CompletionTokens int `json:"completion_tokens"`
+    TotalTokens      int `json:"total_tokens"`
+}
+
+// AIAnalysis AI 分析结果
+type AIAnalysis struct {
+    ID           int64     `json:"id"`
+    TransactionID int64    `json:"transaction_id"`
+    Summary      string    `json:"summary"`
+    Insights     []string  `json:"insights"`
+    Warnings     []string  `json:"warnings"`
+    Suggestions  []string  `json:"suggestions"`
+    Category     string    `json:"category"`
+    Tags         []string  `json:"tags"`
+    CreatedAt    time.Time `json:"created_at"`
+}
+
+// SecurityScan 安全扫描结果
+type SecurityScan struct {
+    ID           int64           `json:"id"`
+    TransactionID int64          `json:"transaction_id"`
+    Score        int             `json:"score"`        // 0-100
+    Issues       []SecurityIssue `json:"issues"`
+    CreatedAt    time.Time       `json:"created_at"`
+}
+
+type SecurityIssue struct {
+    ID          string `json:"id"`
+    Severity    string `json:"severity"`  // critical, high, medium, low, info
+    Name        string `json:"name"`
+    Description string `json:"description"`
+    Evidence    string `json:"evidence"`
+    Remediation string `json:"remediation"`
+}
+
+// GeneratedTest 生成的测试
+type GeneratedTest struct {
+    ID           int64    `json:"id"`
+    TransactionID int64   `json:"transaction_id"`
+    Framework    string   `json:"framework"`  // postman, pytest, go, curl
+    TestCode     string   `json:"test_code"`
+    Coverage     []string `json:"coverage"`
+    CreatedAt    time.Time `json:"created_at"`
+}
+
+// APIDoc 生成的 API 文档
+type APIDoc struct {
+    ID          int64      `json:"id"`
+    Title       string     `json:"title"`
+    Version     string     `json:"version"`
+    Description string     `json:"description"`
+    Endpoints   []Endpoint `json:"endpoints"`
+    CreatedAt   time.Time  `json:"created_at"`
+}
+
+type Endpoint struct {
+    Method      string      `json:"method"`
+    Path        string      `json:"path"`
+    Summary     string      `json:"summary"`
+    Description string      `json:"description"`
+    Parameters  []Parameter `json:"parameters"`
+    RequestBody *Schema     `json:"request_body,omitempty"`
+    Responses   map[int]Response `json:"responses"`
+    Tags        []string    `json:"tags"`
+}
+```
+
+---
+
+## 模块 6: API 集合管理 (API Collection)
+
+### 目录结构
+```
+internal/collection/
+├── manager.go         # 集合管理主控
+├── collection.go      # 集合操作
+├── request.go         # 请求操作
+├── environment.go     # 环境变量
+├── runner.go          # 请求执行器
+└── models.go          # 数据模型
+```
+
+### 数据模型
+
+```go
+// Collection API 集合
+type Collection struct {
+    ID          string       `json:"id"`
+    Name        string       `json:"name"`
+    Description string       `json:"description"`
+    ParentID    string       `json:"parent_id,omitempty"`
+    Items       []CollectionItem `json:"items"`
+    Variables   []Variable   `json:"variables"`
+    CreatedAt   time.Time    `json:"created_at"`
+    UpdatedAt   time.Time    `json:"updated_at"`
+}
+
+type CollectionItem struct {
+    Type     string     `json:"type"` // folder, request
+    Folder   *Folder    `json:"folder,omitempty"`
+    Request  *APIRequest `json:"request,omitempty"`
+}
+
+type Folder struct {
+    ID          string `json:"id"`
+    Name        string `json:"name"`
+    Description string `json:"description"`
+    Items       []CollectionItem `json:"items"`
+}
+
+// APIRequest API 请求定义
+type APIRequest struct {
+    ID          string            `json:"id"`
+    Name        string            `json:"name"`
+    Method      string            `json:"method"`
+    URL         string            `json:"url"`
+    Headers     []KeyValue        `json:"headers"`
+    QueryParams []KeyValue        `json:"query_params"`
+    Body        *RequestBody      `json:"body,omitempty"`
+    Auth        *AuthConfig       `json:"auth,omitempty"`
+    Tests       []Test            `json:"tests"`
+    PreScript   string            `json:"pre_script,omitempty"`
+    PostScript  string            `json:"post_script,omitempty"`
+}
+
+type KeyValue struct {
+    Key         string `json:"key"`
+    Value       string `json:"value"`
+    Description string `json:"description"`
+    Enabled     bool   `json:"enabled"`
+}
+
+type RequestBody struct {
+    Type     string `json:"type"` // none, form-data, x-www-form-urlencoded, raw, binary, graphql
+    Raw      string `json:"raw,omitempty"`
+    FormData []KeyValue `json:"form_data,omitempty"`
+    GraphQL  *GraphQLBody `json:"graphql,omitempty"`
+}
+
+type GraphQLBody struct {
+    Query     string `json:"query"`
+    Variables string `json:"variables,omitempty"`
+}
+
+type AuthConfig struct {
+    Type   string `json:"type"` // none, basic, bearer, api-key, oauth2
+    Config map[string]string `json:"config"`
+}
+
+type Test struct {
+    Name     string `json:"name"`
+    Script   string `json:"script"`
+    Enabled  bool   `json:"enabled"`
+}
+
+// Environment 环境变量
+type Environment struct {
+    ID        string     `json:"id"`
+    Name      string     `json:"name"`
+    Variables []Variable `json:"variables"`
+    IsActive  bool       `json:"is_active"`
+}
+
+type Variable struct {
+    Key         string `json:"key"`
+    Value       string `json:"value"`
+    Description string `json:"description"`
+    IsSecret    bool   `json:"is_secret"`
+}
+
+// TestResult 测试结果
+type TestResult struct {
+    RequestID   string        `json:"request_id"`
+    Duration    int64         `json:"duration_ms"`
+    Tests       []TestOutcome `json:"tests"`
+    Passed      int           `json:"passed"`
+    Failed      int           `json:"failed"`
+    Timestamp   time.Time     `json:"timestamp"`
+}
+
+type TestOutcome struct {
+    Name     string `json:"name"`
+    Passed   bool   `json:"passed"`
+    Error    string `json:"error,omitempty"`
+    Duration int64  `json:"duration_ms"`
+}
+```
+
+---
+
+## 模块 7: 存储层 (Storage Layer)
+
+### 目录结构
+```
+internal/storage/
+├── storage.go         # 存储主控
+├── sqlite.go          # SQLite 实现
+├── migrations.go      # 数据库迁移
+└── models.go          # 数据模型
+```
+
+### 数据库 Schema
+
+```sql
+-- 流量记录
+CREATE TABLE IF NOT EXISTS transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    duration_ms INTEGER,
+    method VARCHAR(10),
+    url TEXT,
+    host VARCHAR(255),
+    path TEXT,
+    scheme VARCHAR(10),
+    port VARCHAR(10),
+    
+    -- 请求数据
+    request_headers TEXT,        -- JSON
+    request_cookies TEXT,        -- JSON
+    request_query_params TEXT,   -- JSON
+    request_body BLOB,
+    request_body_size INTEGER,
+    request_content_type VARCHAR(255),
+    request_raw BLOB,
+    
+    -- 响应数据
+    status_code INTEGER,
+    status_text VARCHAR(50),
+    response_headers TEXT,       -- JSON
+    response_cookies TEXT,       -- JSON
+    response_body BLOB,
+    response_body_size INTEGER,
+    response_content_type VARCHAR(255),
+    response_raw BLOB,
+    
+    -- 网络信息
+    client_addr VARCHAR(45),
+    server_ip VARCHAR(45),
+    
+    -- 元数据
+    bookmarked BOOLEAN DEFAULT FALSE,
+    color VARCHAR(20),
+    notes TEXT,
+    tags TEXT,                   -- JSON array
+    
+    -- AI 分析
+    ai_analysis_id INTEGER,
+    
+    FOREIGN KEY (ai_analysis_id) REFERENCES ai_analyses(id)
+);
+
+-- AI 分析结果
+CREATE TABLE IF NOT EXISTS ai_analyses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    transaction_id INTEGER,
+    summary TEXT,
+    insights TEXT,               -- JSON array
+    warnings TEXT,               -- JSON array
+    suggestions TEXT,            -- JSON array
+    category VARCHAR(50),
+    tags TEXT,                   -- JSON array
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (transaction_id) REFERENCES transactions(id)
+);
+
+-- 安全扫描结果
+CREATE TABLE IF NOT EXISTS security_scans (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    transaction_id INTEGER,
+    score INTEGER,
+    issues TEXT,                 -- JSON array
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (transaction_id) REFERENCES transactions(id)
+);
+
+-- 规则
+CREATE TABLE IF NOT EXISTS rules (
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(255),
+    enabled BOOLEAN DEFAULT TRUE,
+    priority INTEGER DEFAULT 0,
+    match_config TEXT,           -- JSON
+    action_config TEXT,          -- JSON
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 断点
+CREATE TABLE IF NOT EXISTS breakpoints (
+    id VARCHAR(36) PRIMARY KEY,
+    enabled BOOLEAN DEFAULT TRUE,
+    phase VARCHAR(20),
+    match_config TEXT,           -- JSON
+    action_config TEXT,          -- JSON
+    hit_count INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 断点会话
+CREATE TABLE IF NOT EXISTS breakpoint_sessions (
+    id VARCHAR(36) PRIMARY KEY,
+    breakpoint_id VARCHAR(36),
+    transaction_id INTEGER,
+    phase VARCHAR(20),
+    status VARCHAR(20),
+    original_data TEXT,          -- JSON
+    modified_data TEXT,          -- JSON
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    resolved_at DATETIME,
+    FOREIGN KEY (breakpoint_id) REFERENCES breakpoints(id),
+    FOREIGN KEY (transaction_id) REFERENCES transactions(id)
+);
+
+-- API 集合
+CREATE TABLE IF NOT EXISTS collections (
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(255),
+    description TEXT,
+    parent_id VARCHAR(36),
+    variables TEXT,              -- JSON
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (parent_id) REFERENCES collections(id)
+);
+
+-- API 请求
+CREATE TABLE IF NOT EXISTS api_requests (
+    id VARCHAR(36) PRIMARY KEY,
+    collection_id VARCHAR(36),
+    name VARCHAR(255),
+    method VARCHAR(10),
+    url TEXT,
+    headers TEXT,                -- JSON
+    query_params TEXT,           -- JSON
+    body TEXT,                   -- JSON
+    auth TEXT,                   -- JSON
+    tests TEXT,                  -- JSON
+    pre_script TEXT,
+    post_script TEXT,
+    sort_order INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (collection_id) REFERENCES collections(id)
+);
+
+-- 环境变量
+CREATE TABLE IF NOT EXISTS environments (
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(255),
+    variables TEXT,              -- JSON
+    is_active BOOLEAN DEFAULT FALSE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 生成的测试
+CREATE TABLE IF NOT EXISTS generated_tests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    transaction_id INTEGER,
+    framework VARCHAR(50),
+    test_code TEXT,
+    coverage TEXT,               -- JSON array
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (transaction_id) REFERENCES transactions(id)
+);
+
+-- API 文档
+CREATE TABLE IF NOT EXISTS api_docs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title VARCHAR(255),
+    version VARCHAR(50),
+    description TEXT,
+    endpoints TEXT,              -- JSON
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 创建索引
+CREATE INDEX IF NOT EXISTS idx_transactions_timestamp ON transactions(timestamp);
+CREATE INDEX IF NOT EXISTS idx_transactions_method ON transactions(method);
+CREATE INDEX IF NOT EXISTS idx_transactions_host ON transactions(host);
+CREATE INDEX IF NOT EXISTS idx_transactions_status_code ON transactions(status_code);
+CREATE INDEX IF NOT EXISTS idx_transactions_bookmarked ON transactions(bookmarked);
+CREATE INDEX IF NOT EXISTS idx_rules_enabled ON rules(enabled);
+CREATE INDEX IF NOT EXISTS idx_breakpoints_enabled ON breakpoints(enabled);
+CREATE INDEX IF NOT EXISTS idx_api_requests_collection ON api_requests(collection_id);
+```
+
+---
+
+## 模块 8: REST API 层
+
+### 目录结构
+```
+internal/api/
+├── server.go          # API 服务器
+├── handler/
+│   ├── traffic.go     # 流量相关接口
+│   ├── rules.go       # 规则相关接口
+│   ├── breakpoint.go  # 断点相关接口
+│   ├── collection.go  # 集合相关接口
+│   ├── environment.go # 环境相关接口
+│   ├── ai.go          # AI 相关接口
+│   └── system.go      # 系统相关接口
+├── middleware/
+│   ├── cors.go        # CORS 中间件
+│   ├── auth.go        # 认证中间件
+│   └── logger.go      # 日志中间件
+└── websocket/
+    └── hub.go         # WebSocket Hub
+```
+
+### API 设计
+
+```go
+// 流量相关
+GET    /api/traffic                    # 获取流量列表 (支持过滤和分页)
+GET    /api/traffic/:id                # 获取流量详情
+DELETE /api/traffic                    # 清空流量
+DELETE /api/traffic/:id                # 删除单条
+PATCH  /api/traffic/:id                # 更新流量元数据 (bookmark, color, notes)
+POST   /api/traffic/export             # 导出流量 (HAR, JSON, CSV)
+POST   /api/traffic/replay/:id         # 重放请求
+POST   /api/traffic/replay/batch       # 批量重放
+
+// 规则相关
+GET    /api/rules                      # 获取规则列表
+POST   /api/rules                      # 创建规则
+GET    /api/rules/:id                  # 获取规则详情
+PUT    /api/rules/:id                  # 更新规则
+DELETE /api/rules/:id                  # 删除规则
+PATCH  /api/rules/:id/toggle           # 启用/禁用规则
+POST   /api/rules/reorder              # 重新排序规则
+POST   /api/rules/import               # 导入规则
+POST   /api/rules/export               # 导出规则
+
+// 断点相关
+GET    /api/breakpoints                # 获取断点列表
+POST   /api/breakpoints                # 创建断点
+GET    /api/breakpoints/:id            # 获取断点详情
+PUT    /api/breakpoints/:id            # 更新断点
+DELETE /api/breakpoints/:id            # 删除断点
+PATCH  /api/breakpoints/:id/toggle     # 启用/禁用断点
+
+// 断点会话相关
+GET    /api/breakpoint-sessions        # 获取断点会话列表
+GET    /api/breakpoint-sessions/:id    # 获取断点会话详情
+POST   /api/breakpoint-sessions/:id/release   # 释放断点
+POST   /api/breakpoint-sessions/:id/modify    # 修改后释放
+POST   /api/breakpoint-sessions/:id/drop      # 丢弃请求
+
+// 集合相关
+GET    /api/collections                # 获取集合列表
+POST   /api/collections                # 创建集合
+GET    /api/collections/:id            # 获取集合详情
+PUT    /api/collections/:id            # 更新集合
+DELETE /api/collections/:id            # 删除集合
+POST   /api/collections/:id/run        # 运行集合
+POST   /api/collections/import         # 导入集合 (Postman, Insomnia)
+POST   /api/collections/export         # 导出集合
+
+// 集合内请求
+GET    /api/collections/:id/requests           # 获取请求列表
+POST   /api/collections/:id/requests           # 创建请求
+PUT    /api/collections/:id/requests/:rid      # 更新请求
+DELETE /api/collections/:id/requests/:rid      # 删除请求
+POST   /api/collections/:id/requests/:rid/run  # 运行请求
+
+// 环境相关
+GET    /api/environments               # 获取环境列表
+POST   /api/environments               # 创建环境
+GET    /api/environments/:id           # 获取环境详情
+PUT    /api/environments/:id           # 更新环境
+DELETE /api/environments/:id           # 删除环境
+PATCH  /api/environments/:id/activate  # 激活环境
+
+// AI 相关
+POST   /api/ai/analyze/:id             # 分析指定流量
+POST   /api/ai/query                   # 自然语言查询
+POST   /api/ai/test-generate/:id       # 生成测试
+POST   /api/ai/security-scan/:id       # 安全扫描
+POST   /api/ai/doc-generate            # 生成文档
+POST   /api/ai/mock-generate/:id       # 生成 Mock
+POST   /api/ai/chat                    # AI 助手对话
+GET    /api/ai/performance             # 性能分析报告
+
+// 系统相关
+GET    /api/status                     # 系统状态
+GET    /api/config                     # 获取配置
+PUT    /api/config                     # 更新配置
+POST   /api/cert/download              # 下载 CA 证书
+GET    /api/cert/install-guide         # 安装证书指南
+
+// WebSocket
+WS     /ws                             # WebSocket 连接
+```
+
+---
+
+## 模块 9: WebSocket 实时通信
+
+### 目录结构
+```
+internal/websocket/
+├── hub.go             # WebSocket Hub
+├── client.go          # 客户端连接
+├── message.go         # 消息类型
+└── handler.go         # 消息处理
+```
+
+### 消息类型
+
+```go
+// MessageType 消息类型
+type MessageType string
+
+const (
+    // 流量相关
+    MsgNewTraffic      MessageType = "new_traffic"
+    MsgTrafficUpdate   MessageType = "traffic_update"
+    MsgTrafficDelete   MessageType = "traffic_delete"
+    MsgTrafficClear    MessageType = "traffic_clear"
+    
+    // 断点相关
+    MsgBreakpointHit   MessageType = "breakpoint_hit"
+    MsgBreakpointResolve MessageType = "breakpoint_resolve"
+    
+    // 规则相关
+    MsgRuleUpdate      MessageType = "rule_update"
+    
+    // AI 相关
+    MsgAIAnalysis      MessageType = "ai_analysis"
+    MsgAIStreamChunk   MessageType = "ai_stream_chunk"
+    
+    // 系统相关
+    MsgSystemStatus    MessageType = "system_status"
+    MsgError           MessageType = "error"
+)
+
+// Message WebSocket 消息
+type Message struct {
+    Type    MessageType `json:"type"`
+    Payload interface{} `json:"payload"`
+    ID      string      `json:"id,omitempty"`
+}
+```
+
+---
+
+## 模块 10: 前端 UI 设计
+
+### 页面结构
+
+```
+src/
+├── App.tsx
+├── main.tsx
+├── components/
+│   ├── layout/
+│   │   ├── Sidebar.tsx
+│   │   ├── Header.tsx
+│   │   └── StatusBar.tsx
+│   ├── traffic/
+│   │   ├── TrafficList.tsx
+│   │   ├── TrafficDetail.tsx
+│   │   ├── RequestView.tsx
+│   │   ├── ResponseView.tsx
+│   │   └── TimelineView.tsx
+│   ├── rules/
+│   │   ├── RuleList.tsx
+│   │   ├── RuleEditor.tsx
+│   │   └── RuleMatchConfig.tsx
+│   ├── breakpoint/
+│   │   ├── BreakpointList.tsx
+│   │   ├── BreakpointEditor.tsx
+│   │   └── BreakpointSession.tsx
+│   ├── collection/
+│   │   ├── CollectionTree.tsx
+│   │   ├── RequestEditor.tsx
+│   │   ├── ResponseView.tsx
+│   │   └── TestRunner.tsx
+│   ├── environment/
+│   │   ├── EnvironmentList.tsx
+│   │   └── VariableEditor.tsx
+│   ├── ai/
+│   │   ├── AIAssistant.tsx
+│   │   ├── AnalysisPanel.tsx
+│   │   ├── SecurityReport.tsx
+│   │   └── TestGenerator.tsx
+│   └── common/
+│       ├── MonacoEditor.tsx
+│       ├── JSONViewer.tsx
+│       ├── KeyValueEditor.tsx
+│       └── CodeHighlight.tsx
+├── hooks/
+│   ├── useWebSocket.ts
+│   ├── useTraffic.ts
+│   ├── useRules.ts
+│   └── useAI.ts
+├── services/
+│   ├── api.ts
+│   ├── websocket.ts
+│   └── ai.ts
+├── stores/
+│   ├── trafficStore.ts
+│   ├── ruleStore.ts
+│   ├── breakpointStore.ts
+│   └── collectionStore.ts
+└── types/
+    └── index.ts
+```
+
+---
+
+## 实施计划
+
+### Phase 1: 基础重构 (1-2周)
+- [ ] 项目结构重组
+- [ ] SQLite 存储层实现
+- [ ] 数据库迁移系统
+- [ ] 代理引擎重构
+- [ ] 基础 REST API
+
+### Phase 2: 核心功能 (2-3周)
+- [ ] 流量管理器
+- [ ] 规则引擎
+- [ ] 断点调试器
+- [ ] WebSocket 实时通信
+
+### Phase 3: AI 功能 (2-3周)
+- [ ] AI Provider 抽象层
+- [ ] OpenAI/Claude/Ollama 适配
+- [ ] 流量分析功能
+- [ ] 自然语言查询
+- [ ] 安全检测
+
+### Phase 4: 高级功能 (2-3周)
+- [ ] API 集合管理
+- [ ] 测试生成
+- [ ] 文档生成
+- [ ] Mock 生成
+
+### Phase 5: 前端 UI (3-4周)
+- [ ] 项目初始化 (React + TypeScript + TailwindCSS)
+- [ ] 布局组件
+- [ ] 流量列表和详情
+- [ ] 规则配置界面
+- [ ] 断点调试界面
+- [ ] AI 助手面板
+
+### Phase 6: 打包发布 (1周)
+- [ ] Tauri 桌面端打包
+- [ ] 跨平台测试
+- [ ] 文档编写
+
+---
+
+## 开发规范
+
+1. **代码风格**: 遵循 Go 官方规范，使用 golangci-lint
+2. **注释**: 中文注释，简洁明了，专业名词用英文
+3. **测试**: 核心功能需要单元测试
+4. **Git**: 功能分支开发，PR review
+5. **提交**: Conventional Commits 格式

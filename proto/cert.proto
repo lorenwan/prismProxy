@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package prismproxy;
+
+option go_package = "prismproxy/proto/gen/go;pb";
+
+import "common.proto";
+
+// CA 证书信息
+message CAInfo {
+  string subject = 1;
+  string serial_number = 2;
+  string not_before = 3;
+  string not_after = 4;
+  string fingerprint = 5;
+  bool is_loaded = 6;
+}
+
+// 域名证书信息
+message CertInfoProto {
+  string domain = 1;
+  string serial_number = 2;
+  string not_before = 3;
+  string not_after = 4;
+  string issuer = 5;
+  bool is_valid = 6;
+}
+
+// 证书列表响应
+message CertListResponse {
+  repeated CertInfoProto certs = 1;
+}
+
+// 签发证书请求
+message IssueCertRequest {
+  string domain = 1;
+}
+
+// 签发证书响应
+message IssueCertResponse {
+  string domain = 1;
+  string serial_number = 2;
+  string not_before = 3;
+  string not_after = 4;
+}
+
+// 导出 CA 证书响应
+message ExportCAResponse {
+  bytes cert_pem = 1;
+  bytes key_pem = 2;
+}
+
+// 证书检查响应
+message CertCheckResponse {
+  string domain = 1;
+  bool exists = 2;
+  bool is_valid = 3;
+  bool is_expired = 4;
+  string fingerprint = 5;
+}
+
+// 证书管理服务
+service CertService {
+  // 获取 CA 信息
+  rpc GetCAInfo(Empty) returns (CAInfo);
+  // 生成 CA 证书
+  rpc GenerateCA(Empty) returns (CAInfo);
+  // 导出 CA 证书
+  rpc ExportCA(Empty) returns (ExportCAResponse);
+  // 签发域名证书
+  rpc IssueCert(IssueCertRequest) returns (IssueCertResponse);
+  // 列出所有域名证书
+  rpc ListCerts(Empty) returns (CertListResponse);
+  // 删除域名证书
+  rpc DeleteCert(CertDeleteRequest) returns (Empty);
+  // 检查证书状态
+  rpc CheckCert(CertCheckRequest) returns (CertCheckResponse);
+  // 清除所有证书缓存
+  rpc ClearCerts(Empty) returns (Empty);
+}
+
+message CertDeleteRequest {
+  string domain = 1;
+}
+
+message CertCheckRequest {
+  string domain = 1;
+}

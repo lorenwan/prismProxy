@@ -1,0 +1,110 @@
+syntax = "proto3";
+
+package prismproxy;
+
+option go_package = "prismproxy/proto/gen/go;pb";
+
+import "common.proto";
+import "traffic.proto";
+
+// 过滤操作符
+enum FilterOperator {
+  FILTER_OPERATOR_UNSPECIFIED = 0;
+  FILTER_OPERATOR_EQ = 1;
+  FILTER_OPERATOR_NE = 2;
+  FILTER_OPERATOR_GT = 3;
+  FILTER_OPERATOR_LT = 4;
+  FILTER_OPERATOR_CONTAINS = 5;
+  FILTER_OPERATOR_REGEX = 6;
+}
+
+// 过滤条件
+message SearchFilter {
+  string field = 1;
+  FilterOperator operator = 2;
+  string value = 3;
+}
+
+// 搜索请求
+message SearchRequest {
+  string query = 1;
+  repeated SearchFilter filters = 2;
+  string sort = 3;
+  Pagination pagination = 4;
+}
+
+// 搜索结果
+message SearchResultProto {
+  repeated TrafficEntry items = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+  int32 total_pages = 5;
+}
+
+// 已保存的过滤器
+message SavedFilter {
+  string id = 1;
+  string name = 2;
+  string query = 3;
+  repeated SearchFilter filters = 4;
+  string created_at = 5;
+}
+
+// 保存过滤器列表响应
+message SavedFilterListResponse {
+  repeated SavedFilter filters = 1;
+}
+
+// 搜索统计
+message SearchStatsResponse {
+  int32 total = 1;
+  map<string, int64> methods = 2;
+  map<string, int64> status_codes = 3;
+}
+
+// 搜索服务
+service SearchService {
+  // 全文搜索
+  rpc Search(SearchRequest) returns (SearchResultProto);
+  // 按方法搜索
+  rpc SearchByMethod(SearchByMethodRequest) returns (SearchResultProto);
+  // 按主机搜索
+  rpc SearchByHost(SearchByHostRequest) returns (SearchResultProto);
+  // 按状态码搜索
+  rpc SearchByStatusCode(SearchByStatusCodeRequest) returns (SearchResultProto);
+  // 搜索慢请求
+  rpc SearchSlowRequests(SearchSlowRequestsRequest) returns (SearchResultProto);
+  // 获取搜索统计
+  rpc GetSearchStats(SearchRequest) returns (SearchStatsResponse);
+  // 保存过滤器
+  rpc SaveFilter(SavedFilter) returns (SavedFilter);
+  // 获取保存的过滤器列表
+  rpc ListFilters(Empty) returns (SavedFilterListResponse);
+  // 删除过滤器
+  rpc DeleteFilter(DeleteFilterRequest) returns (Empty);
+}
+
+message SearchByMethodRequest {
+  string method = 1;
+  Pagination pagination = 2;
+}
+
+message SearchByHostRequest {
+  string host = 1;
+  Pagination pagination = 2;
+}
+
+message SearchByStatusCodeRequest {
+  int32 status_code = 1;
+  Pagination pagination = 2;
+}
+
+message SearchSlowRequestsRequest {
+  int64 threshold_ms = 1;
+  Pagination pagination = 2;
+}
+
+message DeleteFilterRequest {
+  string id = 1;
+}

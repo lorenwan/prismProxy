@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+package prismproxy;
+
+option go_package = "prismproxy/proto/gen/go;pb";
+
+import "common.proto";
+import "traffic.proto";
+
+// 对比状态
+enum DiffStatus {
+  DIFF_STATUS_UNSPECIFIED = 0;
+  DIFF_STATUS_ADDED = 1;
+  DIFF_STATUS_REMOVED = 2;
+  DIFF_STATUS_MODIFIED = 3;
+  DIFF_STATUS_UNCHANGED = 4;
+}
+
+// 对比类型
+enum DiffType {
+  DIFF_TYPE_UNSPECIFIED = 0;
+  DIFF_TYPE_HEADERS = 1;
+  DIFF_TYPE_BODY = 2;
+  DIFF_TYPE_JSON = 3;
+  DIFF_TYPE_QUERY = 4;
+}
+
+// 对比条目
+message DiffEntry {
+  string path = 1;
+  string left = 2;
+  string right = 3;
+  DiffStatus status = 4;
+}
+
+// 对比结果
+message DiffResultProto {
+  DiffType type = 1;
+  repeated DiffEntry entries = 2;
+}
+
+// JSON 对比条目
+message JSONDiffEntry {
+  string path = 1;
+  string left = 2;
+  string right = 3;
+  DiffStatus status = 4;
+  string type = 5;
+}
+
+// 对比摘要
+message DiffSummary {
+  int32 total_fields = 1;
+  int32 added = 2;
+  int32 removed = 3;
+  int32 modified = 4;
+  int32 unchanged = 5;
+}
+
+// JSON 对比结果
+message JSONDiffResultProto {
+  repeated JSONDiffEntry diffs = 1;
+  DiffSummary summary = 2;
+}
+
+// 对比 Headers 请求
+message CompareHeadersRequest {
+  map<string, StringList> left = 1;
+  map<string, StringList> right = 2;
+}
+
+// 对比 Body 请求
+message CompareBodyRequest {
+  bytes left = 1;
+  bytes right = 2;
+}
+
+// 对比 JSON 请求
+message CompareJSONRequest {
+  string left = 1;
+  string right = 2;
+}
+
+// 对比 Query 请求
+message CompareQueryRequest {
+  map<string, StringList> left = 1;
+  map<string, StringList> right = 2;
+}
+
+// 对比统计
+message DiffStatsResponse {
+  int32 total = 1;
+  int32 added = 2;
+  int32 removed = 3;
+  int32 modified = 4;
+  int32 unchanged = 5;
+}
+
+// Diff 服务
+service DiffService {
+  // 对比 Headers
+  rpc CompareHeaders(CompareHeadersRequest) returns (DiffResultProto);
+  // 对比 Body
+  rpc CompareBody(CompareBodyRequest) returns (DiffResultProto);
+  // 对比 JSON
+  rpc CompareJSON(CompareJSONRequest) returns (JSONDiffResultProto);
+  // 对比 Query 参数
+  rpc CompareQuery(CompareQueryRequest) returns (DiffResultProto);
+}

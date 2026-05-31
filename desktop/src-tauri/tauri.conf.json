@@ -1,0 +1,43 @@
+{
+  "productName": "PrismProxy",
+  "version": "1.0.0",
+  "identifier": "com.prismproxy.app",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:3000",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "PrismProxy - HTTP 调试工具",
+        "width": 1400,
+        "height": 900,
+        "minWidth": 1000,
+        "minHeight": 600,
+        "resizable": true,
+        "decorations": true,
+        "transparent": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png"
+    ],
+    "externalBin": ["bin/prismproxy-server"],
+    "category": "DeveloperTool",
+    "shortDescription": "HTTP 调试代理工具",
+    "longDescription": "PrismProxy 是一个类似 Reqable 的跨平台 HTTP 调试和抓包工具，集成 AI 能力。"
+  }
+}

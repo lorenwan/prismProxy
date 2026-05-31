@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+package prismproxy;
+
+option go_package = "prismproxy/proto/gen/go;pb";
+
+import "common.proto";
+
+// 头部匹配规则
+message HeaderMatch {
+  string name = 1;       // Header 名称
+  string value = 2;      // 匹配值
+  string match_type = 3; // 匹配类型: exact / regex / contains
+}
+
+// 规则匹配条件
+message RuleMatch {
+  string url_pattern = 1;       // URL 正则匹配
+  string url_wildcard = 2;      // URL 通配符匹配
+  string host_pattern = 3;      // 主机名匹配
+  repeated string methods = 4;  // HTTP 方法过滤
+  HeaderMatch header_match = 5; // Header 匹配
+  repeated string content_type = 6; // Content-Type 过滤
+}
+
+// 请求/响应修改规范
+message ModifySpec {
+  map<string, string> add_headers = 1;     // 添加请求头
+  repeated string remove_headers = 2;      // 移除请求头
+  map<string, string> set_headers = 3;     // 设置请求头（覆盖）
+  map<string, string> add_query = 4;       // 添加查询参数
+  repeated string remove_query = 5;        // 移除查询参数
+  map<string, string> set_query = 6;       // 设置查询参数
+  string body_replace = 7;                 // 替换请求体
+}
+
+// 拦截响应规范
+message BlockSpec {
+  int32 status_code = 1;           // 响应状态码
+  map<string, string> headers = 2; // 响应头
+  string body = 3;                 // 响应体
+}
+
+// 规则动作
+message RuleAction {
+  string type = 1;                // 动作类型: block / redirect / modify / delay
+  string local_path = 2;          // 本地文件路径 (redirect)
+  string remote_url = 3;          // 远程 URL (redirect)
+  ModifySpec modify = 4;          // 修改规范
+  BlockSpec block_response = 5;   // 拦截响应规范
+  int32 delay_ms = 6;             // 延迟毫秒数
+}
+
+// 代理规则
+message Rule {
+  string id = 1;            // 规则 ID
+  string name = 2;          // 规则名称
+  bool enabled = 3;         // 是否启用
+  int32 priority = 4;       // 优先级，数值越小优先级越高
+  RuleMatch match = 5;      // 匹配条件
+  RuleAction action = 6;    // 执行动作
+  string created_at = 7;    // 创建时间
+  string updated_at = 8;    // 更新时间
+}
+
+// 规则引擎统计
+message RuleStats {
+  int32 total_rules = 1;               // 总规则数
+  int32 enabled_rules = 2;             // 启用规则数
+  int32 disabled_rules = 3;            // 禁用规则数
+  map<string, int32> hit_counts = 4;   // 命中次数统计
+}
+
+// 规则服务 RPC 定义
+service RulesService {
+  // 获取规则列表
+  rpc List(Empty) returns (RuleListResponse);
+  // 获取单条规则
+  rpc Get(RuleGetRequest) returns (Rule);
+  // 创建规则
+  rpc Create(Rule) returns (Rule);
+  // 更新规则
+  rpc Update(Rule) returns (Rule);
+  // 删除规则
+  rpc Delete(RuleDeleteRequest) returns (Empty);
+  // 切换规则启用状态
+  rpc Toggle(RuleToggleRequest) returns (Rule);
+  // 获取规则统计
+  rpc Stats(Empty) returns (RuleStats);
+}
+
+message RuleListResponse {
+  repeated Rule rules = 1;
+}
+
+message RuleGetRequest {
+  string id = 1;
+}
+
+message RuleDeleteRequest {
+  string id = 1;
+}
+
+message RuleToggleRequest {
+  string id = 1;
+  bool enabled = 2;
+}

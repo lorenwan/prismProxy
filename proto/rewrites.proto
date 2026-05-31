@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package prismproxy;
+
+option go_package = "prismproxy/proto/gen/go;pb";
+
+import "common.proto";
+import "rules.proto";
+
+// 重写类型
+enum RewriteType {
+  REWRITE_TYPE_UNSPECIFIED = 0;
+  REWRITE_TYPE_ADD = 1;       // 添加
+  REWRITE_TYPE_REMOVE = 2;    // 移除
+  REWRITE_TYPE_REPLACE = 3;   // 替换
+  REWRITE_TYPE_SET = 4;       // 设置（覆盖）
+}
+
+// 重写位置
+enum RewriteWhere {
+  REWRITE_WHERE_UNSPECIFIED = 0;
+  REWRITE_WHERE_REQUEST_HEADER = 1;   // 请求头
+  REWRITE_WHERE_RESPONSE_HEADER = 2;  // 响应头
+  REWRITE_WHERE_REQUEST_BODY = 3;     // 请求体
+  REWRITE_WHERE_RESPONSE_BODY = 4;    // 响应体
+  REWRITE_WHERE_URL_QUERY = 5;        // URL 查询参数
+  REWRITE_WHERE_URL_PATH = 6;         // URL 路径
+}
+
+// 重写动作
+message RewriteAction {
+  RewriteType type = 1;  // 重写类型
+  RewriteWhere where = 2; // 重写位置
+  string key = 3;         // 键名 (header/query 参数名)
+  string value = 4;       // 值
+  string target = 5;      // 替换目标 (replace 时使用)
+}
+
+// 重写规则
+message RewriteRule {
+  string id = 1;                  // 规则 ID
+  string name = 2;                // 规则名称
+  bool enabled = 3;               // 是否启用
+  int32 priority = 4;             // 优先级
+  RuleMatch match = 5;            // 匹配条件 (复用 rules.proto)
+  repeated RewriteAction actions = 6; // 重写动作列表
+  string created_at = 7;          // 创建时间
+  string updated_at = 8;          // 更新时间
+}
+
+// 重写服务 RPC 定义
+service RewritesService {
+  // 获取重写规则列表
+  rpc List(Empty) returns (RewriteListResponse);
+  // 获取单条重写规则
+  rpc Get(RewriteGetRequest) returns (RewriteRule);
+  // 创建重写规则
+  rpc Create(RewriteRule) returns (RewriteRule);
+  // 更新重写规则
+  rpc Update(RewriteRule) returns (RewriteRule);
+  // 删除重写规则
+  rpc Delete(RewriteDeleteRequest) returns (Empty);
+  // 切换重写规则启用状态
+  rpc Toggle(RewriteToggleRequest) returns (RewriteRule);
+}
+
+message RewriteListResponse {
+  repeated RewriteRule rules = 1;
+}
+
+message RewriteGetRequest {
+  string id = 1;
+}
+
+message RewriteDeleteRequest {
+  string id = 1;
+}
+
+message RewriteToggleRequest {
+  string id = 1;
+  bool enabled = 2;
+}

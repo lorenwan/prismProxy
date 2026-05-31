@@ -1,0 +1,133 @@
+syntax = "proto3";
+
+package prismproxy;
+
+option go_package = "prismproxy/proto/gen/go;pb";
+
+import "common.proto";
+
+// 性能统计
+message PerfStats {
+  int64 total_requests = 1;
+  double avg_duration_ms = 2;
+  int64 p50_ms = 3;
+  int64 p90_ms = 4;
+  int64 p99_ms = 5;
+  int64 slow_requests = 6;
+  int64 min_duration_ms = 7;
+  int64 max_duration_ms = 8;
+  int64 total_duration_ms = 9;
+}
+
+// 慢请求
+message SlowRequest {
+  int64 transaction_id = 1;
+  string url = 2;
+  string method = 3;
+  string host = 4;
+  int32 status_code = 5;
+  int64 duration_ms = 6;
+  string timestamp = 7;
+}
+
+// 域名统计
+message DomainStats {
+  string domain = 1;
+  int64 request_count = 2;
+  double avg_duration_ms = 3;
+  int64 error_count = 4;
+  double error_rate = 5;
+  int64 total_duration_ms = 6;
+}
+
+// 时间线数据点
+message TimelinePoint {
+  string timestamp = 1;
+  int64 request_count = 2;
+  double avg_duration_ms = 3;
+  int64 error_count = 4;
+}
+
+// 状态码统计
+message StatusCodeStats {
+  int32 status_code = 1;
+  int64 count = 2;
+}
+
+// 请求方法统计
+message MethodStats {
+  string method = 1;
+  int64 count = 2;
+}
+
+// 百分位结果
+message PercentileResult {
+  int64 p50 = 1;
+  int64 p90 = 2;
+  int64 p95 = 3;
+  int64 p99 = 4;
+}
+
+// 慢请求列表响应
+message SlowRequestListResponse {
+  repeated SlowRequest requests = 1;
+}
+
+// 域名统计列表响应
+message DomainStatsListResponse {
+  repeated DomainStats stats = 1;
+}
+
+// 时间线响应
+message TimelineResponse {
+  repeated TimelinePoint points = 1;
+}
+
+// 状态码统计响应
+message StatusCodeStatsResponse {
+  repeated StatusCodeStats stats = 1;
+}
+
+// 方法统计响应
+message MethodStatsResponse {
+  repeated MethodStats stats = 1;
+}
+
+// 获取慢请求请求
+message GetSlowRequestsRequest {
+  int64 threshold_ms = 1;
+  int32 limit = 2;
+}
+
+// 获取时间线请求
+message GetTimelineRequest {
+  string since = 1;
+  int64 interval_seconds = 2;
+}
+
+// 性能统计请求
+message PerfStatsRequest {
+  string since = 1;
+}
+
+// 性能分析服务
+service PerfService {
+  // 获取性能统计
+  rpc GetStats(PerfStatsRequest) returns (PerfStats);
+  // 获取慢请求
+  rpc GetSlowRequests(GetSlowRequestsRequest) returns (SlowRequestListResponse);
+  // 获取域名统计
+  rpc GetDomainStats(Empty) returns (DomainStatsListResponse);
+  // 获取时间线数据
+  rpc GetTimeline(GetTimelineRequest) returns (TimelineResponse);
+  // 获取状态码统计
+  rpc GetStatusCodeStats(PerfStatsRequest) returns (StatusCodeStatsResponse);
+  // 获取请求方法统计
+  rpc GetMethodStats(PerfStatsRequest) returns (MethodStatsResponse);
+  // 获取最近 N 分钟统计
+  rpc GetRecentStats(GetRecentStatsRequest) returns (PerfStats);
+}
+
+message GetRecentStatsRequest {
+  int32 minutes = 1;
+}

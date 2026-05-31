@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package prismproxy;
+
+option go_package = "prismproxy/proto/gen/go;pb";
+
+import "common.proto";
+
+// 环境变量
+message Variable {
+  string id = 1;           // 变量 ID
+  string key = 2;          // 变量名
+  string value = 3;        // 变量值
+  string description = 4;  // 描述
+  bool enabled = 5;        // 是否启用
+  bool is_secret = 6;      // 是否为敏感变量（前端脱敏显示）
+}
+
+// 运行环境
+message Environment {
+  string id = 1;                 // 环境 ID
+  string name = 2;               // 环境名称
+  repeated Variable variables = 3; // 变量列表
+  bool is_active = 4;            // 是否为当前激活环境
+  bool is_default = 5;           // 是否为默认环境
+  string base_url = 6;           // 基础 URL
+  string created_at = 7;         // 创建时间
+  string updated_at = 8;         // 更新时间
+}
+
+// 环境导出格式
+message EnvironmentExport {
+  string version = 1;               // 导出格式版本
+  string name = 2;                  // 环境名称
+  repeated VariableExport variables = 3; // 变量列表
+}
+
+// 导出变量格式
+message VariableExport {
+  string key = 1;
+  string value = 2;
+  bool enabled = 3;
+  string description = 4;
+}
+
+// 环境服务 RPC 定义
+service EnvironmentsService {
+  // 获取环境列表
+  rpc List(Empty) returns (EnvironmentListResponse);
+  // 获取单个环境
+  rpc Get(EnvironmentGetRequest) returns (Environment);
+  // 创建环境
+  rpc Create(Environment) returns (Environment);
+  // 更新环境
+  rpc Update(Environment) returns (Environment);
+  // 删除环境
+  rpc Delete(EnvironmentDeleteRequest) returns (Empty);
+  // 激活环境
+  rpc Activate(EnvironmentActivateRequest) returns (Environment);
+  // 导出环境
+  rpc Export(EnvironmentGetRequest) returns (EnvironmentExport);
+  // 导入环境
+  rpc Import(EnvironmentExport) returns (Environment);
+}
+
+message EnvironmentListResponse {
+  repeated Environment environments = 1;
+}
+
+message EnvironmentGetRequest {
+  string id = 1;
+}
+
+message EnvironmentDeleteRequest {
+  string id = 1;
+}
+
+message EnvironmentActivateRequest {
+  string id = 1;
+}
