@@ -19,6 +19,7 @@ import (
 	"prismproxy/internal/diff"
 	"prismproxy/internal/environment"
 	"prismproxy/internal/perf"
+	"prismproxy/internal/proxy"
 	"prismproxy/internal/rewrite"
 	"prismproxy/internal/rules"
 	"prismproxy/internal/script"
@@ -52,6 +53,7 @@ type Server struct {
 	filterStore  *search.FilterStore
 	storage      *storage.Storage
 	proxyCtrl    *ProxyController
+	systemProxy  *proxy.SystemProxy
 }
 
 // ServerConfig 服务器配置
@@ -60,7 +62,7 @@ type ServerConfig struct {
 }
 
 // NewServer 创建 gRPC 服务器
-func NewServer(cfg ServerConfig, store *storage.Storage, trafficMgr *traffic.Manager, rulesEngine *rules.Engine, debuggerMgr *debugger.Debugger, collectionMgr *collection.Manager, runner *collection.Runner, envMgr *environment.Manager, rewriteEngine *rewrite.Engine, aiSvc *ai.Service, codegenGen *codegen.Generator, scriptStore *script.ScriptStore, scriptEng *script.ScriptEngine, diffEng *diff.DiffEngine, perfAnaly *perf.PerfAnalyzer, certMgr *cert.CertManager, certSt *cert.CertStore, searchEng *search.SearchEngine, filterSt *search.FilterStore, proxyCtrl *ProxyController) (*Server, error) {
+func NewServer(cfg ServerConfig, store *storage.Storage, trafficMgr *traffic.Manager, rulesEngine *rules.Engine, debuggerMgr *debugger.Debugger, collectionMgr *collection.Manager, runner *collection.Runner, envMgr *environment.Manager, rewriteEngine *rewrite.Engine, aiSvc *ai.Service, codegenGen *codegen.Generator, scriptStore *script.ScriptStore, scriptEng *script.ScriptEngine, diffEng *diff.DiffEngine, perfAnaly *perf.PerfAnalyzer, certMgr *cert.CertManager, certSt *cert.CertStore, searchEng *search.SearchEngine, filterSt *search.FilterStore, proxyCtrl *ProxyController, sysProxy *proxy.SystemProxy) (*Server, error) {
 	// 创建监听器
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	lis, err := net.Listen("tcp", addr)
@@ -101,6 +103,7 @@ func NewServer(cfg ServerConfig, store *storage.Storage, trafficMgr *traffic.Man
 		filterStore:  filterSt,
 		storage:      store,
 		proxyCtrl:    proxyCtrl,
+		systemProxy:  sysProxy,
 	}
 
 	// 注册所有服务
@@ -152,7 +155,7 @@ func (s *Server) registerServices() {
 	}
 
 	// 注册 SystemService
-	RegisterSystemServiceImpl(s.grpcServer, s.traffic, s.rules, s.storage, s.certManager, s.proxyCtrl)
+	RegisterSystemServiceImpl(s.grpcServer, s.traffic, s.rules, s.storage, s.certManager, s.proxyCtrl, s.systemProxy)
 	log.Println("[INFO] 已注册 SystemService")
 
 	// 注册 CodeGenService

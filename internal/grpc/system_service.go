@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"prismproxy/internal/cert"
+	"prismproxy/internal/proxy"
 	"prismproxy/internal/rules"
 	"prismproxy/internal/storage"
 	"prismproxy/internal/traffic"
@@ -34,16 +35,18 @@ type SystemServiceImpl struct {
 	store      *storage.Storage
 	certMgr    *cert.CertManager
 	proxyCtrl  *ProxyController
+	systemProxy *proxy.SystemProxy
 }
 
 // RegisterSystemServiceImpl 注册 SystemService
-func RegisterSystemServiceImpl(s *grpc.Server, trafficMgr *traffic.Manager, rulesEngine *rules.Engine, store *storage.Storage, certMgr *cert.CertManager, proxyCtrl *ProxyController) {
+func RegisterSystemServiceImpl(s *grpc.Server, trafficMgr *traffic.Manager, rulesEngine *rules.Engine, store *storage.Storage, certMgr *cert.CertManager, proxyCtrl *ProxyController, systemProxy *proxy.SystemProxy) {
 	pb.RegisterSystemServiceServer(s, &SystemServiceImpl{
-		traffic:   trafficMgr,
-		rules:     rulesEngine,
-		store:     store,
-		certMgr:   certMgr,
-		proxyCtrl: proxyCtrl,
+		traffic:     trafficMgr,
+		rules:       rulesEngine,
+		store:       store,
+		certMgr:     certMgr,
+		proxyCtrl:   proxyCtrl,
+		systemProxy: systemProxy,
 	})
 }
 
@@ -187,6 +190,77 @@ func (s *SystemServiceImpl) StopProxy(ctx context.Context, req *pb.Empty) (*pb.P
 
 	return &pb.ProxyStatusResponse{
 		Running: false,
+	}, nil
+}
+
+// EnableSystemProxy 启用系统代理
+func (s *SystemServiceImpl) EnableSystemProxy(ctx context.Context, req *pb.Empty) (*pb.SystemProxyStatus, error) {
+	if s.systemProxy == nil {
+		return &pb.SystemProxyStatus{
+			Enabled: false,
+			Error:   "系统代理管理器未配置",
+		}, nil
+	}
+
+	if err := s.systemProxy.Enable(); err != nil {
+		return &pb.SystemProxyStatus{
+			Enabled: false,
+			Error:   err.Error(),
+		}, nil
+	}
+
+	_, addr := s.proxyCtrl.StatusFunc()
+	return &pb.SystemProxyStatus{
+		Enabled:   true,
+		ProxyAddr: addr,
+	}, nil
+}
+
+// DisableSystemProxy 禁用系统代理
+func (s *SystemServiceImpl) DisableSystemProxy(ctx context.Context, req *pb.Empty) (*pb.SystemProxyStatus, error) {
+	if s.systemProxy == nil {
+		return &pb.SystemProxyStatus{
+			Enabled: false,
+			Error:   "系统代理管理器未配置",
+		}, nil
+	}
+
+	if err := s.systemProxy.Disable(); err != nil {
+		return &pb.SystemProxyStatus{
+			Enabled: true,
+			Error:   err.Error(),
+		}, nil
+	}
+
+	return &pb.SystemProxyStatus{
+		Enabled: false,
+	}, nil
+}
+
+// GetSystemProxyStatus 获取系统代理状态
+func (s *SystemServiceImpl) GetSystemProxyStatus(ctx context.Context, req *pb.Empty) (*pb.SystemProxyStatus, error) {
+	if s.systemProxy == nil {
+		return &pb.SystemProxyStatus{
+			Enabled: false,
+		}, nil
+	}
+
+	enabled, err := s.systemProxy.IsEnabled()
+	if err != nil {
+		return &pb.SystemProxyStatus{
+			Enabled: false,
+			Error:   err.Error(),
+		}, nil
+	}
+
+	proxyAddr := ""
+	if s.proxyCtrl != nil && s.proxyCtrl.StatusFunc != nil {
+		_, proxyAddr = s.proxyCtrl.StatusFunc()
+	}
+
+	return &pb.SystemProxyStatus{
+		Enabled:   enabled,
+		ProxyAddr: proxyAddr,
 	}, nil
 }
 

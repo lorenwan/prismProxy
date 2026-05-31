@@ -40,8 +40,8 @@ Thumbs.db
 *.sqlite
 
 # Binaries
-proxy
-server
+/proxy
+/server
 prismproxy-server-*
 desktop/src-tauri/bin/
 
@@ -51,8 +51,6 @@ desktop/src-tauri/bin/
 *.pem
 
 # Build artifacts
-proxy
-server
 *.deb
 *.rpm
 *.AppImage

@@ -55,6 +55,13 @@ message SystemStatus {
   string proxy_addr = 12;        // 代理地址
 }
 
+// 系统代理状态
+message SystemProxyStatus {
+  bool enabled = 1;           // 是否启用
+  string proxy_addr = 2;      // 代理地址
+  string error = 3;           // 错误信息
+}
+
 // 系统服务 RPC 定义
 service SystemService {
   // 获取系统状态
@@ -67,6 +74,12 @@ service SystemService {
   rpc StartProxy(Empty) returns (ProxyStatusResponse);
   // 停止代理
   rpc StopProxy(Empty) returns (ProxyStatusResponse);
+  // 启用系统代理
+  rpc EnableSystemProxy(Empty) returns (SystemProxyStatus);
+  // 禁用系统代理
+  rpc DisableSystemProxy(Empty) returns (SystemProxyStatus);
+  // 获取系统代理状态
+  rpc GetSystemProxyStatus(Empty) returns (SystemProxyStatus);
   // 生成 CA 证书
   rpc GenerateCA(Empty) returns (CAGenerateResponse);
   // 导出 CA 证书

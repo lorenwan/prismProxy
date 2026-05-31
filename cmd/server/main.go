@@ -13,7 +13,6 @@ import (
 
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 
-	grpcServer "prismproxy/internal/grpc"
 	"prismproxy/internal/ai"
 	"prismproxy/internal/cert"
 	"prismproxy/internal/codegen"
@@ -21,7 +20,9 @@ import (
 	"prismproxy/internal/debugger"
 	"prismproxy/internal/diff"
 	"prismproxy/internal/environment"
+	"prismproxy/internal/grpc"
 	"prismproxy/internal/perf"
+	"prismproxy/internal/proxy"
 	"prismproxy/internal/rewrite"
 	"prismproxy/internal/rules"
 	"prismproxy/internal/script"
@@ -77,10 +78,33 @@ func main() {
 	filterStore := search.NewFilterStore(store.DB)
 	filterStore.Init()
 
+	// 初始化代理服务器（默认不启动）
+	proxyPort := getEnvInt("PROXY_PORT", 8888)
+	proxyServer := proxy.NewServer(proxy.Config{
+		ListenAddr: "0.0.0.0",
+		Port:       proxyPort,
+	})
+
+	// 创建系统代理管理器
+	systemProxy := proxy.NewSystemProxy(fmt.Sprintf("0.0.0.0:%d", proxyPort))
+
+	// 创建代理控制器
+	proxyCtrl := &grpc.ProxyController{
+		StartFunc: func() error {
+			return proxyServer.Start()
+		},
+		StopFunc: func() error {
+			return proxyServer.Stop()
+		},
+		StatusFunc: func() (bool, string) {
+			return proxyServer.IsRunning(), proxyServer.GetAddr()
+		},
+	}
+
 	// 创建 gRPC 服务器
 	grpcPort := getEnvInt("GRPC_PORT", 9090)
-	srv, err := grpcServer.NewServer(
-		grpcServer.ServerConfig{Port: grpcPort},
+	srv, err := grpc.NewServer(
+		grpc.ServerConfig{Port: grpcPort},
 		store,
 		trafficMgr,
 		rulesEngine,
@@ -99,7 +123,8 @@ func main() {
 		certStore,
 		searchEngine,
 		filterStore,
-		nil, // proxyCtrl 暂未配置
+		proxyCtrl,
+		systemProxy,
 	)
 	if err != nil {
 		log.Fatalf("[FATAL] 创建 gRPC 服务器失败: %v", err)
@@ -167,6 +192,13 @@ func main() {
 	// 关闭 HTTP 服务器
 	if err := httpServer.Shutdown(ctx); err != nil {
 		log.Printf("[ERROR] HTTP 服务器关闭失败: %v", err)
+	}
+
+	// 关闭代理服务器
+	if proxyServer.IsRunning() {
+		if err := proxyServer.Stop(); err != nil {
+			log.Printf("[ERROR] 代理服务器关闭失败: %v", err)
+		}
 	}
 
 	// 关闭 gRPC 服务器
