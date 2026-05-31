@@ -157,3 +157,113 @@ func (s *Storage) ClearTraffic() error {
 	}
 	return nil
 }
+
+// Settings 应用设置
+type Settings struct {
+	ProxyPort        int    `json:"proxy_port"`
+	ProxyListenAddr  string `json:"proxy_listen_addr"`
+	ProxyEnableHTTPS bool   `json:"proxy_enable_https"`
+	ProxyEnableMITM  bool   `json:"proxy_enable_mitm"`
+	Theme            string `json:"theme"`
+	Language         string `json:"language"`
+	EnableTrafficLog bool   `json:"enable_traffic_log"`
+	MaxTrafficCount  int    `json:"max_traffic_count"`
+	TrafficTTLHours  int    `json:"traffic_ttl_hours"`
+}
+
+// GetSettings 获取设置
+func (s *Storage) GetSettings() (*Settings, error) {
+	// 默认设置
+	settings := &Settings{
+		ProxyPort:        8888,
+		ProxyListenAddr:  "0.0.0.0",
+		ProxyEnableHTTPS: true,
+		ProxyEnableMITM:  true,
+		Theme:            "dark",
+		Language:         "zh",
+		EnableTrafficLog: true,
+		MaxTrafficCount:  10000,
+		TrafficTTLHours:  72,
+	}
+
+	rows, err := s.DB.Query("SELECT key, value FROM settings")
+	if err != nil {
+		// 表可能不存在，返回默认值
+		return settings, nil
+	}
+	defer rows.Close()
+
+	kv := make(map[string]string)
+	for rows.Next() {
+		var key, value string
+		if err := rows.Scan(&key, &value); err != nil {
+			continue
+		}
+		kv[key] = value
+	}
+
+	// 从数据库覆盖默认值
+	if v, ok := kv["proxy_port"]; ok {
+		fmt.Sscanf(v, "%d", &settings.ProxyPort)
+	}
+	if v, ok := kv["proxy_listen_addr"]; ok {
+		settings.ProxyListenAddr = v
+	}
+	if v, ok := kv["proxy_enable_https"]; ok {
+		settings.ProxyEnableHTTPS = v == "true"
+	}
+	if v, ok := kv["proxy_enable_mitm"]; ok {
+		settings.ProxyEnableMITM = v == "true"
+	}
+	if v, ok := kv["theme"]; ok {
+		settings.Theme = v
+	}
+	if v, ok := kv["language"]; ok {
+		settings.Language = v
+	}
+	if v, ok := kv["enable_traffic_log"]; ok {
+		settings.EnableTrafficLog = v == "true"
+	}
+	if v, ok := kv["max_traffic_count"]; ok {
+		fmt.Sscanf(v, "%d", &settings.MaxTrafficCount)
+	}
+	if v, ok := kv["traffic_ttl_hours"]; ok {
+		fmt.Sscanf(v, "%d", &settings.TrafficTTLHours)
+	}
+
+	return settings, nil
+}
+
+// SaveSettings 保存设置
+func (s *Storage) SaveSettings(settings *Settings) error {
+	// 将设置逐个写入 key-value 表
+	pairs := map[string]string{
+		"proxy_port":         fmt.Sprintf("%d", settings.ProxyPort),
+		"proxy_listen_addr":  settings.ProxyListenAddr,
+		"proxy_enable_https": fmt.Sprintf("%t", settings.ProxyEnableHTTPS),
+		"proxy_enable_mitm":  fmt.Sprintf("%t", settings.ProxyEnableMITM),
+		"theme":              settings.Theme,
+		"language":           settings.Language,
+		"enable_traffic_log": fmt.Sprintf("%t", settings.EnableTrafficLog),
+		"max_traffic_count":  fmt.Sprintf("%d", settings.MaxTrafficCount),
+		"traffic_ttl_hours":  fmt.Sprintf("%d", settings.TrafficTTLHours),
+	}
+
+	tx, err := s.DB.Begin()
+	if err != nil {
+		return fmt.Errorf("开始事务失败: %w", err)
+	}
+
+	for key, value := range pairs {
+		_, err := tx.Exec(
+			"INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)",
+			key, value,
+		)
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("保存设置 %s 失败: %w", key, err)
+		}
+	}
+
+	return tx.Commit()
+}

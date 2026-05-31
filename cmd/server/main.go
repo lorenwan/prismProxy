@@ -99,6 +99,7 @@ func main() {
 		certStore,
 		searchEngine,
 		filterStore,
+		nil, // proxyCtrl 暂未配置
 	)
 	if err != nil {
 		log.Fatalf("[FATAL] 创建 gRPC 服务器失败: %v", err)

@@ -10,19 +10,56 @@ import (
 	"prismproxy/internal/websocket"
 )
 
+// TrafficEvent 流量事件
+type TrafficEvent struct {
+	Type      string       `json:"type"` // new / update / delete
+	Entry     *Transaction `json:"entry,omitempty"`
+	Timestamp string       `json:"timestamp"`
+}
+
 // Manager 流量管理器
 type Manager struct {
 	storage    *storage.Storage
 	hub        *websocket.Hub
 	mu         sync.RWMutex
 	collectors []*Collector
+	// 事件订阅者
+	subscribers map[chan<- TrafficEvent]struct{}
 }
 
 // NewManager 创建新的流量管理器
 func NewManager(store *storage.Storage, hub *websocket.Hub) *Manager {
 	return &Manager{
-		storage: store,
-		hub:     hub,
+		storage:     store,
+		hub:         hub,
+		subscribers: make(map[chan<- TrafficEvent]struct{}),
+	}
+}
+
+// Subscribe 订阅流量事件
+func (m *Manager) Subscribe(ch chan<- TrafficEvent) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.subscribers[ch] = struct{}{}
+}
+
+// Unsubscribe 取消订阅流量事件
+func (m *Manager) Unsubscribe(ch chan<- TrafficEvent) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.subscribers, ch)
+}
+
+// fireEvent 向所有订阅者发送事件
+func (m *Manager) fireEvent(event TrafficEvent) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	for ch := range m.subscribers {
+		select {
+		case ch <- event:
+		default:
+			// 队列满时跳过，避免阻塞
+		}
 	}
 }
 
@@ -61,6 +98,13 @@ func (m *Manager) SaveTransaction(tx *Transaction) error {
 			Payload: tx,
 		})
 	}
+
+	// 向 gRPC 订阅者发送事件
+	go m.fireEvent(TrafficEvent{
+		Type:      "new",
+		Entry:     tx,
+		Timestamp: time.Now().Format(time.RFC3339),
+	})
 
 	return nil
 }
@@ -154,6 +198,12 @@ func (m *Manager) DeleteTransaction(id int64) error {
 		})
 	}
 
+	// 向 gRPC 订阅者发送事件
+	go m.fireEvent(TrafficEvent{
+		Type:      "delete",
+		Timestamp: time.Now().Format(time.RFC3339),
+	})
+
 	return nil
 }
 
@@ -170,6 +220,12 @@ func (m *Manager) ClearTransactions() error {
 			Payload: nil,
 		})
 	}
+
+	// 向 gRPC 订阅者发送事件
+	go m.fireEvent(TrafficEvent{
+		Type:      "delete",
+		Timestamp: time.Now().Format(time.RFC3339),
+	})
 
 	return nil
 }

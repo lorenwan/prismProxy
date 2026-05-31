@@ -13,6 +13,13 @@ import (
 	"prismproxy/internal/websocket"
 )
 
+// BreakpointEvent 断点事件
+type BreakpointEvent struct {
+	Type      string             `json:"type"` // hit / resolved
+	Session   *BreakpointSession `json:"session,omitempty"`
+	Timestamp string             `json:"timestamp"`
+}
+
 // Debugger 断点调试器
 type Debugger struct {
 	store   *Store
@@ -21,6 +28,8 @@ type Debugger struct {
 	mu      sync.RWMutex
 	// 活跃会话通道，用于阻塞等待用户操作
 	sessions map[string]chan *SessionResult
+	// 事件订阅者
+	subscribers map[chan<- BreakpointEvent]struct{}
 }
 
 // SessionResult 会话操作结果
@@ -32,10 +41,38 @@ type SessionResult struct {
 // NewDebugger 创建新的调试器
 func NewDebugger(db *sql.DB, hub *websocket.Hub) *Debugger {
 	return &Debugger{
-		store:    NewStore(db),
-		matcher:  rules.NewMatcher(),
-		hub:      hub,
-		sessions: make(map[string]chan *SessionResult),
+		store:       NewStore(db),
+		matcher:     rules.NewMatcher(),
+		hub:         hub,
+		sessions:    make(map[string]chan *SessionResult),
+		subscribers: make(map[chan<- BreakpointEvent]struct{}),
+	}
+}
+
+// Subscribe 订阅断点事件
+func (d *Debugger) Subscribe(ch chan<- BreakpointEvent) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.subscribers[ch] = struct{}{}
+}
+
+// Unsubscribe 取消订阅断点事件
+func (d *Debugger) Unsubscribe(ch chan<- BreakpointEvent) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	delete(d.subscribers, ch)
+}
+
+// fireEvent 向所有订阅者发送事件
+func (d *Debugger) fireEvent(event BreakpointEvent) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	for ch := range d.subscribers {
+		select {
+		case ch <- event:
+		default:
+			// 队列满时跳过
+		}
 	}
 }
 
@@ -328,24 +365,34 @@ func (d *Debugger) DropSession(sessionID string) error {
 
 // notifyBreakpointHit 通知前端断点命中
 func (d *Debugger) notifyBreakpointHit(session *BreakpointSession) {
-	if d.hub == nil {
-		return
+	if d.hub != nil {
+		d.hub.Broadcast(&websocket.Message{
+			Type:    "breakpoint_hit",
+			Payload: session,
+		})
 	}
 
-	d.hub.Broadcast(&websocket.Message{
-		Type:    "breakpoint_hit",
-		Payload: session,
+	// 向 gRPC 订阅者发送事件
+	go d.fireEvent(BreakpointEvent{
+		Type:      "hit",
+		Session:   session,
+		Timestamp: time.Now().Format(time.RFC3339),
 	})
 }
 
 // notifySessionResolved 通知前端会话已处理
 func (d *Debugger) notifySessionResolved(session *BreakpointSession) {
-	if d.hub == nil {
-		return
+	if d.hub != nil {
+		d.hub.Broadcast(&websocket.Message{
+			Type:    "breakpoint_resolved",
+			Payload: session,
+		})
 	}
 
-	d.hub.Broadcast(&websocket.Message{
-		Type:    "breakpoint_resolved",
-		Payload: session,
+	// 向 gRPC 订阅者发送事件
+	go d.fireEvent(BreakpointEvent{
+		Type:      "resolved",
+		Session:   session,
+		Timestamp: time.Now().Format(time.RFC3339),
 	})
 }

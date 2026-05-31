@@ -3,7 +3,6 @@ package grpc
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -112,10 +111,22 @@ func (s *TrafficServiceImpl) Stats(ctx context.Context, req *pb.TrafficStatsRequ
 
 // Subscribe 订阅流量事件 (服务端流)
 func (s *TrafficServiceImpl) Subscribe(req *pb.Empty, stream pb.TrafficService_SubscribeServer) error {
-	// TODO: 实现流量事件订阅，需要 Manager 支持事件通知机制
-	// 暂时阻塞等待客户端断开
-	<-stream.Context().Done()
-	return stream.Context().Err()
+	// 创建事件通道
+	ch := make(chan traffic.TrafficEvent, 64)
+	s.manager.Subscribe(ch)
+	defer s.manager.Unsubscribe(ch)
+
+	for {
+		select {
+		case <-stream.Context().Done():
+			return stream.Context().Err()
+		case event := <-ch:
+			pbEvent := trafficEventToProto(event.Type, event.Entry)
+			if err := stream.Send(pbEvent); err != nil {
+				return err
+			}
+		}
+	}
 }
 
 // === proto ↔ Go 转换函数 ===
@@ -284,8 +295,7 @@ func statsToProto(stats *traffic.TrafficStats) *pb.TrafficStats {
 	return result
 }
 
-// TODO: 需要在 traffic.Manager 中添加事件订阅机制
-// 以下是事件转换的辅助函数，供后续实现使用
+// 事件转换辅助函数
 
 // trafficEventToProto 将流量事件转换为 proto 格式
 func trafficEventToProto(eventType string, tx *traffic.Transaction) *pb.TrafficEvent {
@@ -386,8 +396,3 @@ func unmarshalJSON(s string, v interface{}) error {
 
 // ensure TrafficServiceImpl implements pb.TrafficServiceServer
 var _ pb.TrafficServiceServer = (*TrafficServiceImpl)(nil)
-
-// ensure unused imports are used
-var _ = fmt.Sprintf
-var _ = marshalJSON
-var _ = unmarshalJSON

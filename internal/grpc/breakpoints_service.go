@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"google.golang.org/grpc"
@@ -11,7 +10,6 @@ import (
 
 	"prismproxy/internal/debugger"
 	"prismproxy/internal/rules"
-	"prismproxy/internal/traffic"
 	pb "prismproxy/proto/gen/go"
 )
 
@@ -158,9 +156,28 @@ func (s *BreakpointsServiceImpl) ResolveSession(ctx context.Context, req *pb.Res
 
 // Subscribe 订阅断点事件 (服务端流)
 func (s *BreakpointsServiceImpl) Subscribe(req *pb.Empty, stream pb.BreakpointsService_SubscribeServer) error {
-	// TODO: 实现断点事件订阅，需要 Debugger 支持事件通知机制
-	<-stream.Context().Done()
-	return stream.Context().Err()
+	// 创建事件通道
+	ch := make(chan debugger.BreakpointEvent, 64)
+	s.debugger.Subscribe(ch)
+	defer s.debugger.Unsubscribe(ch)
+
+	for {
+		select {
+		case <-stream.Context().Done():
+			return stream.Context().Err()
+		case event := <-ch:
+			pbEvent := &pb.BreakpointEvent{
+				Type:      event.Type,
+				Timestamp: event.Timestamp,
+			}
+			if event.Session != nil {
+				pbEvent.Session = sessionToProto(event.Session)
+			}
+			if err := stream.Send(pbEvent); err != nil {
+				return err
+			}
+		}
+	}
 }
 
 // === proto ↔ Go 转换函数 ===
@@ -336,7 +353,3 @@ func sessionStatusToProto(s debugger.SessionStatus) pb.SessionStatus {
 
 // 确保 BreakpointsServiceImpl 实现了 pb.BreakpointsServiceServer
 var _ pb.BreakpointsServiceServer = (*BreakpointsServiceImpl)(nil)
-
-// 确保未使用的导入被使用
-var _ = fmt.Sprintf
-var _ = traffic.Transaction{}

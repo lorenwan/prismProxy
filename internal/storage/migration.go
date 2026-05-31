@@ -153,6 +153,17 @@ var migrations = []Migration{
 		CREATE INDEX IF NOT EXISTS idx_environments_active ON environments(is_active);
 		`,
 	},
+	{
+		Version: 7,
+		Name:    "create_settings_table",
+		SQL: `
+		CREATE TABLE IF NOT EXISTS settings (
+			key TEXT PRIMARY KEY,
+			value TEXT,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		);
+		`,
+	},
 }
 
 // RunMigrations 执行数据库迁移

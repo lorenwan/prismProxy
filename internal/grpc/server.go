@@ -33,24 +33,25 @@ type Server struct {
 	listener   net.Listener
 
 	// 模块引用
-	traffic     *traffic.Manager
-	rules       *rules.Engine
-	debugger    *debugger.Debugger
-	collection  *collection.Manager
-	runner      *collection.Runner
-	environment *environment.Manager
-	rewrite     *rewrite.Engine
-	ai          *ai.Service
-	codegen     *codegen.Generator
-	scriptStore *script.ScriptStore
+	traffic      *traffic.Manager
+	rules        *rules.Engine
+	debugger     *debugger.Debugger
+	collection   *collection.Manager
+	runner       *collection.Runner
+	environment  *environment.Manager
+	rewrite      *rewrite.Engine
+	ai           *ai.Service
+	codegen      *codegen.Generator
+	scriptStore  *script.ScriptStore
 	scriptEngine *script.ScriptEngine
-	diffEngine  *diff.DiffEngine
+	diffEngine   *diff.DiffEngine
 	perfAnalyzer *perf.PerfAnalyzer
-	certManager *cert.CertManager
-	certStore   *cert.CertStore
+	certManager  *cert.CertManager
+	certStore    *cert.CertStore
 	searchEngine *search.SearchEngine
-	filterStore *search.FilterStore
-	storage     *storage.Storage
+	filterStore  *search.FilterStore
+	storage      *storage.Storage
+	proxyCtrl    *ProxyController
 }
 
 // ServerConfig 服务器配置
@@ -59,7 +60,7 @@ type ServerConfig struct {
 }
 
 // NewServer 创建 gRPC 服务器
-func NewServer(cfg ServerConfig, store *storage.Storage, trafficMgr *traffic.Manager, rulesEngine *rules.Engine, debuggerMgr *debugger.Debugger, collectionMgr *collection.Manager, runner *collection.Runner, envMgr *environment.Manager, rewriteEngine *rewrite.Engine, aiSvc *ai.Service, codegenGen *codegen.Generator, scriptStore *script.ScriptStore, scriptEng *script.ScriptEngine, diffEng *diff.DiffEngine, perfAnaly *perf.PerfAnalyzer, certMgr *cert.CertManager, certSt *cert.CertStore, searchEng *search.SearchEngine, filterSt *search.FilterStore) (*Server, error) {
+func NewServer(cfg ServerConfig, store *storage.Storage, trafficMgr *traffic.Manager, rulesEngine *rules.Engine, debuggerMgr *debugger.Debugger, collectionMgr *collection.Manager, runner *collection.Runner, envMgr *environment.Manager, rewriteEngine *rewrite.Engine, aiSvc *ai.Service, codegenGen *codegen.Generator, scriptStore *script.ScriptStore, scriptEng *script.ScriptEngine, diffEng *diff.DiffEngine, perfAnaly *perf.PerfAnalyzer, certMgr *cert.CertManager, certSt *cert.CertStore, searchEng *search.SearchEngine, filterSt *search.FilterStore, proxyCtrl *ProxyController) (*Server, error) {
 	// 创建监听器
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	lis, err := net.Listen("tcp", addr)
@@ -99,6 +100,7 @@ func NewServer(cfg ServerConfig, store *storage.Storage, trafficMgr *traffic.Man
 		searchEngine: searchEng,
 		filterStore:  filterSt,
 		storage:      store,
+		proxyCtrl:    proxyCtrl,
 	}
 
 	// 注册所有服务
@@ -150,7 +152,7 @@ func (s *Server) registerServices() {
 	}
 
 	// 注册 SystemService
-	RegisterSystemServiceImpl(s.grpcServer, s.traffic, s.rules)
+	RegisterSystemServiceImpl(s.grpcServer, s.traffic, s.rules, s.storage, s.certManager, s.proxyCtrl)
 	log.Println("[INFO] 已注册 SystemService")
 
 	// 注册 CodeGenService
