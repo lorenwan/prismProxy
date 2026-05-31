@@ -44,3 +44,15 @@ proxy
 server
 prismproxy-server-*
 desktop/src-tauri/bin/
+
+# Certificates (should not be in repo)
+*.crt
+*.key
+*.pem
+
+# Build artifacts
+proxy
+server
+*.deb
+*.rpm
+*.AppImage
