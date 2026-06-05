@@ -1,27 +1,48 @@
-import api from './api'
+import { invoke } from '@tauri-apps/api/core'
 import type { Environment } from '../types'
 
 // 获取环境列表
 export async function getEnvironments(): Promise<Environment[]> {
-  return api.get('/environments') as any
+  const result = await invoke<string>('list_environments')
+  return JSON.parse(result)
+}
+
+// 获取单个环境
+export async function getEnvironment(id: string): Promise<Environment> {
+  const result = await invoke<string>('get_environment', { id })
+  return JSON.parse(result)
 }
 
 // 创建环境
 export async function createEnvironment(env: Partial<Environment>): Promise<Environment> {
-  return api.post('/environments', env) as any
+  const result = await invoke<string>('create_environment', { environment: JSON.stringify(env) })
+  return JSON.parse(result)
 }
 
 // 更新环境
 export async function updateEnvironment(id: string, env: Partial<Environment>): Promise<Environment> {
-  return api.put(`/environments/${id}`, env) as any
+  const result = await invoke<string>('update_environment', { environment: JSON.stringify({ ...env, id }) })
+  return JSON.parse(result)
 }
 
 // 删除环境
 export async function deleteEnvironment(id: string): Promise<void> {
-  return api.delete(`/environments/${id}`) as any
+  await invoke('delete_environment', { id })
 }
 
 // 激活环境
 export async function activateEnvironment(id: string): Promise<void> {
-  return api.put(`/environments/${id}/activate`) as any
+  await invoke('activate_environment', { id })
+}
+
+// 导出环境
+export async function exportEnvironment(id: string): Promise<string> {
+  const result = await invoke<string>('export_environment', { id })
+  return result
+}
+
+// 导入环境
+export async function importEnvironment(data: string): Promise<Environment> {
+  const result = await invoke<string>('import_environment', { environmentExport: data })
+  return JSON.parse(result)
 }

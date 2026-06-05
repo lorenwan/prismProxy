@@ -1,32 +1,43 @@
-import api from './api'
+import { invoke } from '@tauri-apps/api/core'
 import type { RewriteRule } from '../types'
 
 // 获取重写规则列表
 export async function getRewrites(): Promise<RewriteRule[]> {
-  return api.get('/rewrites') as any
+  const result = await invoke<string>('list_rewrites')
+  return JSON.parse(result)
+}
+
+// 获取单条重写规则
+export async function getRewrite(id: string): Promise<RewriteRule> {
+  const result = await invoke<string>('get_rewrite', { id })
+  return JSON.parse(result)
 }
 
 // 创建重写规则
 export async function createRewrite(rule: Partial<RewriteRule>): Promise<RewriteRule> {
-  return api.post('/rewrites', rule) as any
+  const result = await invoke<string>('create_rewrite', { rewrite: JSON.stringify(rule) })
+  return JSON.parse(result)
 }
 
 // 更新重写规则
 export async function updateRewrite(id: string, rule: Partial<RewriteRule>): Promise<RewriteRule> {
-  return api.put(`/rewrites/${id}`, rule) as any
+  const result = await invoke<string>('update_rewrite', { rewrite: JSON.stringify({ ...rule, id }) })
+  return JSON.parse(result)
 }
 
 // 删除重写规则
 export async function deleteRewrite(id: string): Promise<void> {
-  return api.delete(`/rewrites/${id}`) as any
+  await invoke('delete_rewrite', { id })
 }
 
 // 切换启用状态
 export async function toggleRewrite(id: string, enabled: boolean): Promise<void> {
-  return api.put(`/rewrites/${id}`, { enabled }) as any
+  await invoke('toggle_rewrite', { id, enabled })
 }
 
-// 批量启用/禁用
+// 批量启用/禁用（逐个调用）
 export async function batchToggleRewrites(ids: string[], enabled: boolean): Promise<void> {
-  return api.put('/rewrites/batch', { ids, enabled }) as any
+  for (const id of ids) {
+    await invoke('toggle_rewrite', { id, enabled })
+  }
 }

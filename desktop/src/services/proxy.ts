@@ -1,8 +1,4 @@
-import { createGrpcClient } from './grpc'
-import { SystemService } from '../proto/gen/ts/system_service_pb'
-
-// 创建 gRPC 客户端
-const systemClient = createGrpcClient(SystemService)
+import { invoke } from '@tauri-apps/api/core'
 
 // 代理状态
 export interface ProxyStatus {
@@ -18,61 +14,54 @@ export interface SystemProxyStatus {
   error?: string
 }
 
+// 获取系统状态（包含代理信息）
+export async function getSystemStatus(): Promise<any> {
+  const result = await invoke<string>('get_system_status')
+  return JSON.parse(result)
+}
+
 // 启动代理
 export async function startProxy(): Promise<ProxyStatus> {
-  const response = await systemClient.startProxy({})
+  await invoke('start_proxy')
+  const status = await getSystemStatus()
   return {
-    running: response.running,
-    addr: response.addr || '',
-    error: response.error || undefined,
+    running: status?.proxyRunning || true,
+    addr: status?.proxyAddr || '',
   }
 }
 
 // 停止代理
 export async function stopProxy(): Promise<ProxyStatus> {
-  const response = await systemClient.stopProxy({})
+  await invoke('stop_proxy')
   return {
-    running: response.running,
+    running: false,
     addr: '',
-    error: response.error || undefined,
   }
 }
 
 // 获取代理状态
 export async function getProxyStatus(): Promise<ProxyStatus> {
-  const response = await systemClient.getStatus({})
+  const status = await getSystemStatus()
   return {
-    running: response.proxyRunning || false,
-    addr: response.proxyAddr || '',
+    running: status?.proxyRunning || false,
+    addr: status?.proxyAddr || '',
   }
 }
 
-// 启用系统代理
+// 启用系统代理（TODO: Rust 层暂未实现系统代理开关 IPC 命令）
 export async function enableSystemProxy(): Promise<SystemProxyStatus> {
-  const response = await systemClient.enableSystemProxy({})
-  return {
-    enabled: response.enabled,
-    proxyAddr: response.proxyAddr || '',
-    error: response.error || undefined,
-  }
+  console.warn('enableSystemProxy: 暂未实现 Tauri IPC')
+  return { enabled: false, proxyAddr: '', error: '暂未实现' }
 }
 
-// 禁用系统代理
+// 禁用系统代理（TODO: Rust 层暂未实现系统代理开关 IPC 命令）
 export async function disableSystemProxy(): Promise<SystemProxyStatus> {
-  const response = await systemClient.disableSystemProxy({})
-  return {
-    enabled: response.enabled,
-    proxyAddr: '',
-    error: response.error || undefined,
-  }
+  console.warn('disableSystemProxy: 暂未实现 Tauri IPC')
+  return { enabled: false, proxyAddr: '', error: '暂未实现' }
 }
 
-// 获取系统代理状态
+// 获取系统代理状态（TODO: Rust 层暂未实现系统代理状态 IPC 命令）
 export async function getSystemProxyStatus(): Promise<SystemProxyStatus> {
-  const response = await systemClient.getSystemProxyStatus({})
-  return {
-    enabled: response.enabled,
-    proxyAddr: response.proxyAddr || '',
-    error: response.error || undefined,
-  }
+  console.warn('getSystemProxyStatus: 暂未实现 Tauri IPC')
+  return { enabled: false, proxyAddr: '' }
 }
