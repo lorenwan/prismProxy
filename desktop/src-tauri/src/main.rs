@@ -60,6 +60,11 @@ fn main() {
             commands::traffic::delete_traffic,
             commands::traffic::clear_traffic,
             commands::traffic::subscribe_traffic,
+            commands::rules::list_rules,
+            commands::rules::get_rule,
+            commands::rules::create_rule,
+            commands::rules::update_rule,
+            commands::rules::delete_rule,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
