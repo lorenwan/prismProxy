@@ -23,7 +23,7 @@ impl SidecarManager {
             .shell()
             .sidecar("prismproxy-server")
             .map_err(|e| e.to_string())?
-            .args(&["--port", "9090", "--proxy-port", "8080"])
+            .args(&["--port", "9090", "--proxy-port", "8888"])
             .spawn()
             .map_err(|e| e.to_string())?;
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -34,6 +35,13 @@ import (
 
 func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
+	// 命令行参数
+	port := flag.Int("port", 0, "gRPC 服务器端口（覆盖 GRPC_PORT 环境变量）")
+	proxyPortFlag := flag.Int("proxy-port", 0, "HTTP 代理端口（覆盖 PROXY_PORT 环境变量）")
+	httpPortFlag := flag.Int("http-port", 0, "HTTP/gRPC-Web 服务器端口（覆盖 HTTP_PORT 环境变量）")
+	flag.Parse()
+
 	log.Println("[INFO] PrismProxy gRPC 服务器启动中...")
 
 	// 初始化 SQLite 存储
@@ -80,6 +88,9 @@ func main() {
 
 	// 初始化代理服务器（默认不启动）
 	proxyPort := getEnvInt("PROXY_PORT", 8888)
+	if *proxyPortFlag > 0 {
+		proxyPort = *proxyPortFlag
+	}
 	proxyServer := proxy.NewServer(proxy.Config{
 		ListenAddr: "0.0.0.0",
 		Port:       proxyPort,
@@ -103,6 +114,9 @@ func main() {
 
 	// 创建 gRPC 服务器
 	grpcPort := getEnvInt("GRPC_PORT", 9090)
+	if *port > 0 {
+		grpcPort = *port
+	}
 	srv, err := grpc.NewServer(
 		grpc.ServerConfig{Port: grpcPort},
 		store,
@@ -140,6 +154,9 @@ func main() {
 
 	// HTTP 服务器同时处理 gRPC-Web 和普通 HTTP
 	httpPort := getEnvInt("HTTP_PORT", 8080)
+	if *httpPortFlag > 0 {
+		httpPort = *httpPortFlag
+	}
 	httpServer := &http.Server{
 		Addr: fmt.Sprintf(":%d", httpPort),
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
