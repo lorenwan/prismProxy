@@ -65,6 +65,9 @@ fn main() {
             commands::rules::create_rule,
             commands::rules::update_rule,
             commands::rules::delete_rule,
+            commands::ai::chat,
+            commands::ai::stream_chat,
+            commands::ai::check_ai_availability,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
