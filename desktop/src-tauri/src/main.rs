@@ -1,4 +1,5 @@
 mod error;
+mod state;
 
 use std::sync::Mutex;
 use tauri::Manager;
