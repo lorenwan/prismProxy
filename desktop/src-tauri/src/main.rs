@@ -55,6 +55,11 @@ fn main() {
             commands::system::get_system_status,
             commands::system::start_proxy,
             commands::system::stop_proxy,
+            commands::traffic::list_traffic,
+            commands::traffic::get_traffic,
+            commands::traffic::delete_traffic,
+            commands::traffic::clear_traffic,
+            commands::traffic::subscribe_traffic,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
