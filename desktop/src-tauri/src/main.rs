@@ -1,4 +1,7 @@
+mod config;
 mod error;
+mod grpc_client;
+mod sidecar;
 mod state;
 
 use std::sync::Mutex;

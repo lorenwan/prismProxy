@@ -3,7 +3,7 @@ fn main() {
     tonic_build::configure()
         .build_server(false) // 只生成客户端，不生成服务端
         .build_client(true)
-        .compile(
+        .compile_protos(
             &[
                 "../../proto/common.proto",
                 "../../proto/traffic.proto",
@@ -25,5 +25,5 @@ fn main() {
         )
         .unwrap();
 
-    tauri_build::run()
+    tauri_build::build()
 }
