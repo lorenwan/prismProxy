@@ -1,43 +1,61 @@
-mod config;
-mod error;
-mod grpc_client;
-mod sidecar;
-mod state;
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::sync::Mutex;
+use prismproxy_desktop::*;
+use state::AppState;
 use tauri::Manager;
-use tauri_plugin_shell::{process::CommandChild, ShellExt};
 
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .manage(AppState::default())
         .setup(|app| {
-            // 启动 Go sidecar (gRPC 服务器)
-            let sidecar_command = app.shell().sidecar("prismproxy-server").unwrap();
-            let (_rx, child) = sidecar_command
-                .args(&["--port", "9090", "--proxy-port", "8080"])
-                .spawn()
-                .expect("Failed to spawn PrismProxy server sidecar");
+            let app_handle = app.handle().clone();
 
-            // 存储子进程句柄，关闭窗口时清理
-            app.manage(Mutex::new(Some(child)));
+            // 获取 AppState（Clone 产生独立副本，不持有引用）
+            let state: AppState = app.state::<AppState>().inner().clone();
 
-            println!("[Tauri] PrismProxy sidecar started");
+            // 启动 sidecar
+            {
+                let state_clone = state.clone();
+                let app_clone = app_handle.clone();
+                tokio::spawn(async move {
+                    let mut sidecar = state_clone.sidecar_manager.lock().await;
+                    if let Err(e) = sidecar.start(app_clone).await {
+                        eprintln!("[Tauri] Failed to start sidecar: {}", e);
+                    }
+                });
+            }
+
+            // 初始化 gRPC 客户端
+            {
+                let state_clone = state.clone();
+                tokio::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                    if let Err(e) = state_clone.init_grpc_client("http://localhost:9090").await {
+                        eprintln!("[Tauri] Failed to init gRPC client: {}", e);
+                    }
+                });
+            }
+
             Ok(())
         })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
-                // 关闭时停止 sidecar
-                if let Some(state) = window.try_state::<Mutex<Option<CommandChild>>>() {
-                    if let Ok(mut guard) = state.lock() {
-                        if let Some(child) = guard.take() {
-                            let _ = child.kill();
-                            println!("[Tauri] PrismProxy sidecar stopped");
-                        }
-                    }
+                if let Some(state) = window.try_state::<AppState>() {
+                    let state = (*state).clone();
+                    tokio::spawn(async move {
+                        let mut sidecar = state.sidecar_manager.lock().await;
+                        sidecar.stop().await;
+                        println!("[Tauri] PrismProxy sidecar stopped");
+                    });
                 }
             }
         })
+        .invoke_handler(tauri::generate_handler![
+            commands::system::get_system_status,
+            commands::system::start_proxy,
+            commands::system::stop_proxy,
+        ])
         .run(tauri::generate_context!())
-        .expect("error while running PrismProxy");
+        .expect("error while running tauri application");
 }
