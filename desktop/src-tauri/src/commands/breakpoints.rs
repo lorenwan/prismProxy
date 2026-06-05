@@ -18,7 +18,7 @@ pub async fn list_breakpoints(state: State<'_, AppState>) -> AppResult<String> {
         .list(Empty {})
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 获取单条断点
@@ -33,7 +33,7 @@ pub async fn get_breakpoint(
         .get(BreakpointGetRequest { id })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 创建断点
@@ -50,7 +50,7 @@ pub async fn create_breakpoint(
         .create(request)
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 更新断点
@@ -67,7 +67,7 @@ pub async fn update_breakpoint(
         .update(request)
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 删除断点
@@ -98,7 +98,7 @@ pub async fn toggle_breakpoint(
         .toggle(BreakpointToggleRequest { id, enabled })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 获取活跃会话列表
@@ -112,7 +112,7 @@ pub async fn list_breakpoint_sessions(
         .list_sessions(Empty {})
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 处理会话（继续/丢弃/修改后继续）
@@ -139,7 +139,7 @@ pub async fn resolve_breakpoint_session(
         })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 订阅断点事件（服务端流式推送）

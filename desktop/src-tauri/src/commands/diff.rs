@@ -32,7 +32,7 @@ pub async fn compare_headers(
         })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 对比 Body
@@ -51,7 +51,7 @@ pub async fn compare_body(
         })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 对比 JSON
@@ -67,7 +67,7 @@ pub async fn compare_json(
         .compare_json(CompareJsonRequest { left, right })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 对比 Query 参数
@@ -94,5 +94,5 @@ pub async fn compare_query(
         })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }

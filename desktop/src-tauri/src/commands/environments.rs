@@ -18,7 +18,7 @@ pub async fn list_environments(state: State<'_, AppState>) -> AppResult<String> 
         .list(Empty {})
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 获取单个环境
@@ -33,7 +33,7 @@ pub async fn get_environment(
         .get(EnvironmentGetRequest { id })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 创建环境
@@ -50,7 +50,7 @@ pub async fn create_environment(
         .create(request)
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 更新环境
@@ -67,7 +67,7 @@ pub async fn update_environment(
         .update(request)
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 删除环境
@@ -97,7 +97,7 @@ pub async fn activate_environment(
         .activate(EnvironmentActivateRequest { id })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 导出环境
@@ -112,7 +112,7 @@ pub async fn export_environment(
         .export(EnvironmentGetRequest { id })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 导入环境
@@ -129,5 +129,5 @@ pub async fn import_environment(
         .import(request)
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }

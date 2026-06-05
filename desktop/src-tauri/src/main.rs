@@ -26,14 +26,27 @@ fn main() {
                 });
             }
 
-            // 初始化 gRPC 客户端
+            // 初始化 gRPC 客户端（带重试机制）
             {
                 let state_clone = state.clone();
                 tauri::async_runtime::spawn(async move {
-                    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-                    if let Err(e) = state_clone.init_grpc_client("http://localhost:9090").await {
-                        eprintln!("[Tauri] Failed to init gRPC client: {}", e);
+                    let max_retries = 5;
+                    let retry_interval = std::time::Duration::from_secs(1);
+
+                    for attempt in 1..=max_retries {
+                        tokio::time::sleep(retry_interval).await;
+                        eprintln!("[Tauri] Attempting to connect gRPC client ({}/{})...", attempt, max_retries);
+                        match state_clone.init_grpc_client("http://localhost:9090").await {
+                            Ok(()) => {
+                                eprintln!("[Tauri] gRPC client connected successfully");
+                                return;
+                            }
+                            Err(e) => {
+                                eprintln!("[Tauri] gRPC client connection attempt {} failed: {}", attempt, e);
+                            }
+                        }
                     }
+                    eprintln!("[Tauri] Failed to init gRPC client after {} retries", max_retries);
                 });
             }
 
@@ -56,12 +69,18 @@ fn main() {
             commands::system::get_system_status,
             commands::system::start_proxy,
             commands::system::stop_proxy,
+            commands::system::enable_system_proxy,
+            commands::system::disable_system_proxy,
+            commands::system::get_system_proxy_status,
+            commands::system::get_settings,
+            commands::system::update_settings,
             // Traffic
             commands::traffic::list_traffic,
             commands::traffic::get_traffic,
             commands::traffic::delete_traffic,
             commands::traffic::clear_traffic,
             commands::traffic::subscribe_traffic,
+            commands::traffic::get_traffic_stats,
             // Rules
             commands::rules::list_rules,
             commands::rules::get_rule,
@@ -99,6 +118,8 @@ fn main() {
             commands::collections::update_collection_request,
             commands::collections::delete_collection_request,
             commands::collections::execute_collection_request,
+            commands::collections::export_collection,
+            commands::collections::import_collection,
             // Environments
             commands::environments::list_environments,
             commands::environments::get_environment,
@@ -141,6 +162,7 @@ fn main() {
             commands::cert::delete_cert,
             commands::cert::check_cert,
             commands::cert::clear_certs,
+            commands::cert::get_trust_status,
             // Search
             commands::search::search,
             commands::search::search_by_method,

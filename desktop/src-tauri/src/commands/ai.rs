@@ -24,7 +24,7 @@ pub async fn chat(
         .chat(request)
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 流式聊天（通过Tauri事件推送流式响应）
@@ -73,5 +73,5 @@ pub async fn check_ai_availability(
         .check_availability(Empty {})
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }

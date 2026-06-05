@@ -37,7 +37,7 @@ pub async fn search(
         })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 按方法搜索
@@ -62,7 +62,7 @@ pub async fn search_by_method(
         })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 按主机搜索
@@ -87,7 +87,7 @@ pub async fn search_by_host(
         })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 按状态码搜索
@@ -112,7 +112,7 @@ pub async fn search_by_status_code(
         })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 搜索慢请求
@@ -137,7 +137,7 @@ pub async fn search_slow_requests(
         })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 获取搜索统计
@@ -157,7 +157,7 @@ pub async fn get_search_stats(
         })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 保存过滤器
@@ -174,7 +174,7 @@ pub async fn save_filter(
         .save_filter(request)
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 获取保存的过滤器列表
@@ -186,7 +186,7 @@ pub async fn list_filters(state: State<'_, AppState>) -> AppResult<String> {
         .list_filters(Empty {})
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 删除过滤器

@@ -17,7 +17,7 @@ pub async fn list_rewrites(state: State<'_, AppState>) -> AppResult<String> {
         .list(Empty {})
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 获取单条重写规则
@@ -32,7 +32,7 @@ pub async fn get_rewrite(
         .get(RewriteGetRequest { id })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 创建重写规则
@@ -49,7 +49,7 @@ pub async fn create_rewrite(
         .create(request)
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 更新重写规则
@@ -66,7 +66,7 @@ pub async fn update_rewrite(
         .update(request)
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 删除重写规则
@@ -97,5 +97,5 @@ pub async fn toggle_rewrite(
         .toggle(RewriteToggleRequest { id, enabled })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }

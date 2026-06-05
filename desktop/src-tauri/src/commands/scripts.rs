@@ -18,7 +18,7 @@ pub async fn list_scripts(state: State<'_, AppState>) -> AppResult<String> {
         .list(Empty {})
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 获取单个脚本
@@ -33,7 +33,7 @@ pub async fn get_script(
         .get(ScriptGetRequest { id })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 创建脚本
@@ -50,7 +50,7 @@ pub async fn create_script(
         .create(request)
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 更新脚本
@@ -67,7 +67,7 @@ pub async fn update_script(
         .update(request)
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 删除脚本
@@ -90,14 +90,18 @@ pub async fn delete_script(
 pub async fn toggle_script(
     state: State<'_, AppState>,
     id: String,
+    enabled: Option<bool>,
 ) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
     let response = client
         .scripts
-        .toggle(ScriptToggleRequest { id })
+        .toggle(ScriptToggleRequest {
+            id,
+            enabled: enabled.unwrap_or(false),
+        })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 执行脚本
@@ -118,5 +122,5 @@ pub async fn execute_script(
         })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }

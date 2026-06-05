@@ -16,6 +16,16 @@ pub enum AppError {
 
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
+
+    #[error("Serialization error: {0}")]
+    Serialize(String),
+}
+
+impl AppError {
+    /// 将 Result<T, serde_json::Error> 转换为 AppResult<T>
+    pub fn from_json_result<T>(result: Result<T, serde_json::Error>) -> AppResult<T> {
+        result.map_err(|e| AppError::Serialize(format!("JSON 序列化失败: {}", e)))
+    }
 }
 
 // 实现Serialize，以便通过IPC返回给前端

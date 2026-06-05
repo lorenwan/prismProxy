@@ -6,6 +6,8 @@ use crate::grpc_client::Pagination;
 use crate::grpc_client::TrafficDeleteRequest;
 use crate::grpc_client::TrafficGetRequest;
 use crate::grpc_client::TrafficListRequest;
+use crate::grpc_client::TrafficStatsRequest;
+use crate::grpc_client::TrafficFilter;
 use crate::state::AppState;
 
 /// 获取流量列表
@@ -14,8 +16,30 @@ pub async fn list_traffic(
     state: State<'_, AppState>,
     page: Option<i32>,
     page_size: Option<i32>,
+    method: Option<String>,
+    status: Option<i32>,
+    host: Option<String>,
 ) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
+
+    // 构建过滤器
+    let mut filter = TrafficFilter::default();
+    if let Some(ref m) = method {
+        if !m.is_empty() {
+            filter.method = vec![m.clone()];
+        }
+    }
+    if let Some(s) = status {
+        if s != 0 {
+            filter.status_code = vec![s];
+        }
+    }
+    if let Some(ref h) = host {
+        if !h.is_empty() {
+            filter.host = vec![h.clone()];
+        }
+    }
+
     let request = TrafficListRequest {
         pagination: Some(Pagination {
             page: page.unwrap_or(1),
@@ -23,14 +47,14 @@ pub async fn list_traffic(
             sort_by: String::new(),
             sort_desc: false,
         }),
-        ..Default::default()
+        filter: Some(filter),
     };
     let response = client
         .traffic
         .list(request)
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 获取单条流量详情
@@ -46,7 +70,7 @@ pub async fn get_traffic(
         .get(request)
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 删除流量记录
@@ -101,4 +125,18 @@ pub async fn subscribe_traffic(
     });
 
     Ok(())
+}
+
+/// 获取流量统计
+#[tauri::command]
+pub async fn get_traffic_stats(
+    state: State<'_, AppState>,
+) -> AppResult<String> {
+    let mut client = state.get_grpc_client().await?;
+    let response = client
+        .traffic
+        .stats(TrafficStatsRequest { ..Default::default() })
+        .await
+        .map_err(crate::error::AppError::Grpc)?;
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }

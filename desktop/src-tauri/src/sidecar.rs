@@ -18,16 +18,39 @@ impl SidecarManager {
 
     /// 启动 sidecar 进程并开始健康检查
     pub async fn start(&mut self, app: AppHandle) -> Result<(), String> {
-        // 启动 sidecar
-        let (_rx, child) = app
+        // 启动 sidecar（同时启动 gRPC:9090、HTTP:8080、Proxy:8888）
+        let (rx, child) = app
             .shell()
             .sidecar("prismproxy-server")
             .map_err(|e| e.to_string())?
-            .args(&["--port", "9090", "--proxy-port", "8888"])
+            .args(&["--port", "9090", "--http-port", "8080", "--proxy-port", "8888"])
             .spawn()
             .map_err(|e| e.to_string())?;
 
         self.child = Some(child);
+
+        // 消费 stdout/stderr 输出，打印到控制台便于调试
+        tokio::spawn(async move {
+            let mut rx = rx;
+            while let Some(event) = rx.recv().await {
+                use tauri_plugin_shell::process::CommandEvent;
+                match event {
+                    CommandEvent::Stdout(line) => {
+                        eprintln!("[Sidecar stdout] {}", String::from_utf8_lossy(&line));
+                    }
+                    CommandEvent::Stderr(line) => {
+                        eprintln!("[Sidecar stderr] {}", String::from_utf8_lossy(&line));
+                    }
+                    CommandEvent::Error(err) => {
+                        eprintln!("[Sidecar error] {}", err);
+                    }
+                    CommandEvent::Terminated(status) => {
+                        eprintln!("[Sidecar] Process terminated with status: {:?}", status);
+                    }
+                    _ => {}
+                }
+            }
+        });
 
         // 启动健康检查
         self.start_health_check(app);

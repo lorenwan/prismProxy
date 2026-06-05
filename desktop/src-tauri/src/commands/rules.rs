@@ -16,7 +16,7 @@ pub async fn list_rules(state: State<'_, AppState>) -> AppResult<String> {
         .list(Empty {})
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 获取单条规则
@@ -28,7 +28,7 @@ pub async fn get_rule(state: State<'_, AppState>, id: String) -> AppResult<Strin
         .get(RuleGetRequest { id })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 创建规则
@@ -42,7 +42,7 @@ pub async fn create_rule(state: State<'_, AppState>, rule: String) -> AppResult<
         .create(request)
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 更新规则
@@ -56,7 +56,7 @@ pub async fn update_rule(state: State<'_, AppState>, rule: String) -> AppResult<
         .update(request)
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 删除规则

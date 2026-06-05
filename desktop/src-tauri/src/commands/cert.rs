@@ -16,7 +16,7 @@ pub async fn get_ca_info(state: State<'_, AppState>) -> AppResult<String> {
         .get_ca_info(Empty {})
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 生成 CA 证书
@@ -28,7 +28,7 @@ pub async fn generate_ca(state: State<'_, AppState>) -> AppResult<String> {
         .generate_ca(Empty {})
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 导出 CA 证书
@@ -40,7 +40,7 @@ pub async fn export_ca(state: State<'_, AppState>) -> AppResult<String> {
         .export_ca(Empty {})
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 签发域名证书
@@ -55,7 +55,7 @@ pub async fn issue_cert(
         .issue_cert(IssueCertRequest { domain })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 列出所有域名证书
@@ -67,7 +67,7 @@ pub async fn list_certs(state: State<'_, AppState>) -> AppResult<String> {
         .list_certs(Empty {})
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 删除域名证书
@@ -97,7 +97,7 @@ pub async fn check_cert(
         .check_cert(CertCheckRequest { domain })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 清除所有证书缓存
@@ -110,4 +110,16 @@ pub async fn clear_certs(state: State<'_, AppState>) -> AppResult<()> {
         .await
         .map_err(crate::error::AppError::Grpc)?;
     Ok(())
+}
+
+/// 获取 CA 证书信任状态
+#[tauri::command]
+pub async fn get_trust_status(state: State<'_, AppState>) -> AppResult<String> {
+    let mut client = state.get_grpc_client().await?;
+    let response = client
+        .cert
+        .get_trust_status(Empty {})
+        .await
+        .map_err(crate::error::AppError::Grpc)?;
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }

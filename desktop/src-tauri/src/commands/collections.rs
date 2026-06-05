@@ -20,7 +20,7 @@ pub async fn list_collections(state: State<'_, AppState>) -> AppResult<String> {
         .list(Empty {})
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 获取单个集合
@@ -35,7 +35,7 @@ pub async fn get_collection(
         .get(CollectionGetRequest { id })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 创建集合
@@ -52,7 +52,7 @@ pub async fn create_collection(
         .create(request)
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 更新集合
@@ -69,7 +69,7 @@ pub async fn update_collection(
         .update(request)
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 删除集合
@@ -107,7 +107,7 @@ pub async fn add_collection_request(
         })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 更新集合中的请求
@@ -130,7 +130,7 @@ pub async fn update_collection_request(
         })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 删除集合中的请求
@@ -170,5 +170,39 @@ pub async fn execute_collection_request(
         })
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(serde_json::to_string(&response.into_inner()).unwrap())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
+}
+
+/// 导出集合
+#[tauri::command]
+pub async fn export_collection(
+    state: State<'_, AppState>,
+    id: String,
+) -> AppResult<String> {
+    let mut client = state.get_grpc_client().await?;
+    let response = client
+        .collections
+        .export_collection(CollectionGetRequest { id })
+        .await
+        .map_err(crate::error::AppError::Grpc)?;
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
+}
+
+/// 导入集合
+#[tauri::command]
+pub async fn import_collection(
+    state: State<'_, AppState>,
+    data: String,
+    filename: Option<String>,
+) -> AppResult<String> {
+    let mut client = state.get_grpc_client().await?;
+    let response = client
+        .collections
+        .import_collection(crate::grpc_client::ImportCollectionRequest {
+            data: data.into_bytes(),
+            filename: filename.unwrap_or_default(),
+        })
+        .await
+        .map_err(crate::error::AppError::Grpc)?;
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
