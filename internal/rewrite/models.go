@@ -23,9 +23,37 @@ const (
 type RewriteWhere string
 
 const (
-	RewriteWhereRequest  RewriteWhere = "request"
-	RewriteWhereResponse RewriteWhere = "response"
+	RewriteWhereRequestHeader  RewriteWhere = "request_header"
+	RewriteWhereResponseHeader RewriteWhere = "response_header"
+	RewriteWhereRequestBody    RewriteWhere = "request_body"
+	RewriteWhereResponseBody   RewriteWhere = "response_body"
+	RewriteWhereURLQuery       RewriteWhere = "url_query"
+	RewriteWhereURLPath        RewriteWhere = "url_path"
+
+	// 兼容别名
+	RewriteWhereRequest  = RewriteWhereRequestHeader
+	RewriteWhereResponse = RewriteWhereResponseHeader
 )
+
+// IsRequest 判断是否为请求阶段的重写位置
+func (w RewriteWhere) IsRequest() bool {
+	switch w {
+	case RewriteWhereRequestHeader, RewriteWhereRequestBody, RewriteWhereURLQuery, RewriteWhereURLPath:
+		return true
+	default:
+		return false
+	}
+}
+
+// IsResponse 判断是否为响应阶段的重写位置
+func (w RewriteWhere) IsResponse() bool {
+	switch w {
+	case RewriteWhereResponseHeader, RewriteWhereResponseBody:
+		return true
+	default:
+		return false
+	}
+}
 
 // RewriteRule 重写规则
 type RewriteRule struct {
@@ -41,9 +69,9 @@ type RewriteRule struct {
 
 // RewriteAction 重写动作
 type RewriteAction struct {
-	Type   RewriteType `json:"type"`
+	Type   RewriteType  `json:"type"`
 	Where  RewriteWhere `json:"where"`
-	Key    string      `json:"key,omitempty"`    // header name 等
-	Value  string      `json:"value,omitempty"`  // 替换值
-	Target string      `json:"target,omitempty"` // 本地文件路径或远程 URL
+	Key    string       `json:"key,omitempty"`    // header name 等
+	Value  string       `json:"value,omitempty"`  // 替换值
+	Target string       `json:"target,omitempty"` // 本地文件路径或远程 URL
 }

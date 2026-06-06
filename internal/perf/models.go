@@ -4,16 +4,16 @@ import "time"
 
 // PerfStats 性能统计
 type PerfStats struct {
-	TotalRequests int64         `json:"total_requests"`
-	AvgDuration   float64       `json:"avg_duration_ms"`
-	P50           int64         `json:"p50_ms"`
-	P90           int64         `json:"p90_ms"`
-	P99           int64         `json:"p99_ms"`
-	SlowRequests  int64         `json:"slow_requests"`
-	MinDuration   int64         `json:"min_duration_ms"`
-	MaxDuration   int64         `json:"max_duration_ms"`
-	TotalDuration int64         `json:"total_duration_ms"`
-	TimeRange     TimeRange     `json:"time_range"`
+	TotalRequests int64     `json:"total_requests"`
+	AvgDuration   float64   `json:"avg_duration_ms"`
+	P50           int64     `json:"p50_ms"`
+	P90           int64     `json:"p90_ms"`
+	P99           int64     `json:"p99_ms"`
+	SlowRequests  int64     `json:"slow_requests"`
+	MinDuration   int64     `json:"min_duration_ms"`
+	MaxDuration   int64     `json:"max_duration_ms"`
+	TotalDuration int64     `json:"total_duration_ms"`
+	TimeRange     TimeRange `json:"time_range"`
 }
 
 // TimeRange 时间范围

@@ -251,6 +251,17 @@ func (m *CertManager) IsCAInitialized() bool {
 	return m.caCert != nil && m.caKey != nil
 }
 
+// GetCARaw 获取 CA 证书原始 DER 字节
+func (m *CertManager) GetCARaw() []byte {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	if m.caCert == nil {
+		return nil
+	}
+	return m.caCert.Raw
+}
+
 // ClearCerts 清除所有域名证书缓存
 func (m *CertManager) ClearCerts() {
 	m.certPool.ClearCache()

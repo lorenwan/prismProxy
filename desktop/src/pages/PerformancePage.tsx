@@ -20,17 +20,17 @@ export default function PerformancePage() {
   const completedReports = reports.filter((r) => r.status === 'completed' && r.results)
   const totalRequests = completedReports.reduce((sum, r) => sum + (r.results?.totalRequests || 0), 0)
   const avgDuration = completedReports.length > 0
-    ? Math.round(completedReports.reduce((sum, r) => sum + (r.results?.avgResponseTime || 0), 0) / completedReports.length)
+    ? Math.round(completedReports.reduce((sum, r) => sum + (r.results?.avgDurationMs || 0), 0) / completedReports.length)
     : 0
-  const p50 = selected?.results?.p50ResponseTime ?? 0
-  const p90 = selected?.results?.p90ResponseTime ?? 0
-  const p99 = selected?.results?.p99ResponseTime ?? 0
-  const errorRate = selected?.results?.errorRate ?? 0
+  const p50 = selected?.results?.p50Ms ?? 0
+  const p90 = selected?.results?.p90Ms ?? 0
+  const p99 = selected?.results?.p99Ms ?? 0
+  const errorRate = selected?.results?.slowRequests ?? 0
 
   // 慢请求：取所有报告中 p90 以上的请求
   const slowRequests = completedReports
-    .filter((r) => r.results && r.results.avgResponseTime > 500)
-    .sort((a, b) => (b.results?.avgResponseTime || 0) - (a.results?.avgResponseTime || 0))
+    .filter((r) => r.results && r.results.avgDurationMs > 500)
+    .sort((a, b) => (b.results?.avgDurationMs || 0) - (a.results?.avgDurationMs || 0))
 
   // 域名统计（从报告 config 中提取）
   const domainStats = new Map<string, { count: number; totalDuration: number; errors: number }>()
@@ -40,8 +40,8 @@ export default function PerformancePage() {
       const domain = url.hostname
       const existing = domainStats.get(domain) || { count: 0, totalDuration: 0, errors: 0 }
       existing.count++
-      existing.totalDuration += r.results?.avgResponseTime || 0
-      existing.errors += r.results?.failedRequests || 0
+      existing.totalDuration += r.results?.avgDurationMs || 0
+      existing.errors += r.results?.slowRequests || 0
       domainStats.set(domain, existing)
     } catch {}
   })
@@ -54,8 +54,8 @@ export default function PerformancePage() {
     }))
     .sort((a, b) => b.requests - a.requests)
 
-  // 时间线数据
-  const timeline = selected?.results?.timeline || []
+  // 时间线数据（PerfResults 中无 timeline 字段，暂用空数组）
+  const timeline: Array<{ rps: number; avgLatency: number; errorRate: number }> = []
   const maxRps = Math.max(...timeline.map((t) => t.rps), 1)
 
   function getStatusColor(report: PerformanceReport) {
@@ -82,7 +82,7 @@ export default function PerformancePage() {
             { label: '平均耗时', value: `${avgDuration}ms`, color: '#9ece6a' },
             { label: 'P50', value: `${p50}ms`, color: '#e0af68' },
             { label: 'P90', value: `${p90}ms`, color: '#ff9e6d' },
-            { label: '错误率', value: `${(errorRate * 100).toFixed(1)}%`, color: '#f7768e' },
+            { label: '慢请求', value: `${errorRate}`, color: '#f7768e' },
           ].map((card) => (
             <div key={card.label} className="bg-[#1a1b26] border border-[#3b4261] rounded p-3">
               <div className="text-xs text-[#565f89] mb-1">{card.label}</div>
@@ -96,19 +96,19 @@ export default function PerformancePage() {
           <div className="grid grid-cols-4 gap-3">
             <div className="bg-[#1a1b26] border border-[#3b4261] rounded p-3">
               <div className="text-xs text-[#565f89] mb-1">P99</div>
-              <div className="text-lg font-semibold text-[#f7768e]">{selected.results.p99ResponseTime}ms</div>
+              <div className="text-lg font-semibold text-[#f7768e]">{selected.results.p99Ms}ms</div>
             </div>
             <div className="bg-[#1a1b26] border border-[#3b4261] rounded p-3">
-              <div className="text-xs text-[#565f89] mb-1">RPS</div>
-              <div className="text-lg font-semibold text-[#7aa2f7]">{selected.results.requestsPerSecond.toFixed(1)}</div>
+              <div className="text-xs text-[#565f89] mb-1">慢请求数</div>
+              <div className="text-lg font-semibold text-[#7aa2f7]">{selected.results.slowRequests}</div>
             </div>
             <div className="bg-[#1a1b26] border border-[#3b4261] rounded p-3">
-              <div className="text-xs text-[#565f89] mb-1">吞吐量</div>
-              <div className="text-lg font-semibold text-[#9ece6a]">{(selected.results.throughput / 1024).toFixed(1)} KB/s</div>
+              <div className="text-xs text-[#565f89] mb-1">最大耗时</div>
+              <div className="text-lg font-semibold text-[#9ece6a]">{selected.results.maxDurationMs}ms</div>
             </div>
             <div className="bg-[#1a1b26] border border-[#3b4261] rounded p-3">
               <div className="text-xs text-[#565f89] mb-1">总耗时</div>
-              <div className="text-lg font-semibold text-[#e0af68]">{(selected.results.totalDuration / 1000).toFixed(1)}s</div>
+              <div className="text-lg font-semibold text-[#e0af68]">{(selected.results.totalDurationMs / 1000).toFixed(1)}s</div>
             </div>
           </div>
         )}
@@ -137,7 +137,7 @@ export default function PerformancePage() {
                     >
                       <td className="px-3 py-1.5 truncate max-w-[200px]">{report.name}</td>
                       <td className={`px-3 py-1.5 ${getStatusColor(report)}`}>{getStatusLabel(report)}</td>
-                      <td className="px-3 py-1.5 text-right text-[#f7768e]">{report.results?.avgResponseTime}ms</td>
+                      <td className="px-3 py-1.5 text-right text-[#f7768e]">{report.results?.avgDurationMs}ms</td>
                       <td className="px-3 py-1.5 text-right">{report.results?.totalRequests}</td>
                       <td className="px-3 py-1.5 text-right">
                         <button

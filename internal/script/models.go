@@ -4,15 +4,16 @@ import "time"
 
 // Script 脚本定义
 type Script struct {
-	ID        string       `json:"id"`
-	Name      string       `json:"name"`
-	Content   string       `json:"content"`
-	Phase     ScriptPhase  `json:"phase"`
-	Enabled   bool         `json:"enabled"`
-	Priority  int          `json:"priority"`
-	Language  ScriptType   `json:"language"`
-	CreatedAt time.Time    `json:"created_at"`
-	UpdatedAt time.Time    `json:"updated_at"`
+	ID          string      `json:"id"`
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	Content     string      `json:"content"`
+	Phase       ScriptPhase `json:"phase"`
+	Enabled     bool        `json:"enabled"`
+	Priority    int         `json:"priority"`
+	Language    ScriptType  `json:"language"`
+	CreatedAt   time.Time   `json:"created_at"`
+	UpdatedAt   time.Time   `json:"updated_at"`
 }
 
 // ScriptType 脚本类型

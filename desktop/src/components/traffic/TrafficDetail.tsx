@@ -46,7 +46,7 @@ export default function TrafficDetail() {
             </div>
             <div>
               <span className="text-[#565f89]">状态码: </span>
-              <span className={getStatusColor(selected.status)}>{selected.status}</span>
+              <span className={getStatusColor(selected.response?.status_code ?? 0)}>{selected.response?.status_code ?? '-'}</span>
             </div>
             <div>
               <span className="text-[#565f89]">方法: </span>
@@ -54,19 +54,19 @@ export default function TrafficDetail() {
             </div>
             <div>
               <span className="text-[#565f89]">耗时: </span>
-              <span className="text-[#c0caf5]">{selected.duration}ms</span>
+              <span className="text-[#c0caf5]">{selected.duration_ms}ms</span>
             </div>
             <div>
               <span className="text-[#565f89]">时间: </span>
-              <span className="text-[#c0caf5]">{new Date(selected.requestTime).toLocaleString()}</span>
+              <span className="text-[#c0caf5]">{new Date(selected.timestamp).toLocaleString()}</span>
             </div>
             <div>
               <span className="text-[#565f89]">Content-Type: </span>
-              <span className="text-[#c0caf5]">{selected.contentType}</span>
+              <span className="text-[#c0caf5]">{selected.response?.content_type ?? '-'}</span>
             </div>
             <div>
               <span className="text-[#565f89]">大小: </span>
-              <span className="text-[#c0caf5]">{formatSize(selected.size)}</span>
+              <span className="text-[#c0caf5]">{formatSize(selected.response?.body_size ?? 0)}</span>
             </div>
           </div>
         )}
@@ -76,10 +76,10 @@ export default function TrafficDetail() {
             <div>
               <h3 className="text-xs text-[#565f89] mb-2">请求头</h3>
               <div className="bg-[#1a1b26] rounded p-2 font-mono text-xs">
-                {Object.entries(selected.request.headers).map(([key, value]) => (
+                {Object.entries(selected.request.headers).map(([key, val]) => (
                   <div key={key} className="flex">
                     <span className="text-[#7aa2f7] w-40 shrink-0">{key}:</span>
-                    <span className="text-[#a9b1d6] break-all">{value}</span>
+                    <span className="text-[#a9b1d6] break-all">{val.values?.join(', ') ?? ''}</span>
                   </div>
                 ))}
               </div>
@@ -100,10 +100,10 @@ export default function TrafficDetail() {
             <div>
               <h3 className="text-xs text-[#565f89] mb-2">响应头</h3>
               <div className="bg-[#1a1b26] rounded p-2 font-mono text-xs">
-                {Object.entries(selected.response.headers).map(([key, value]) => (
+                {Object.entries(selected.response.headers).map(([key, val]) => (
                   <div key={key} className="flex">
                     <span className="text-[#7aa2f7] w-40 shrink-0">{key}:</span>
-                    <span className="text-[#a9b1d6] break-all">{value}</span>
+                    <span className="text-[#a9b1d6] break-all">{val.values?.join(', ') ?? ''}</span>
                   </div>
                 ))}
               </div>
@@ -112,7 +112,7 @@ export default function TrafficDetail() {
               <div>
                 <h3 className="text-xs text-[#565f89] mb-2">响应体</h3>
                 <pre className="bg-[#1a1b26] rounded p-2 font-mono text-xs text-[#a9b1d6] overflow-auto max-h-60">
-                  {formatBody(selected.response.body, selected.response.contentType)}
+                  {formatBody(selected.response.body, selected.response.content_type)}
                 </pre>
               </div>
             )}

@@ -2,6 +2,9 @@ package grpc
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"runtime"
 	"time"
 
 	"google.golang.org/grpc"
@@ -143,6 +146,30 @@ func (s *CertServiceImpl) CheckCert(ctx context.Context, req *pb.CertCheckReques
 func (s *CertServiceImpl) ClearCerts(ctx context.Context, req *pb.Empty) (*pb.Empty, error) {
 	s.manager.ClearCerts()
 	return &pb.Empty{}, nil
+}
+
+// GetTrustStatus 获取 CA 证书信任状态
+func (s *CertServiceImpl) GetTrustStatus(ctx context.Context, req *pb.Empty) (*pb.TrustStatusResponse, error) {
+	info := s.manager.GetCAInfo()
+	if info == nil || !info.IsLoaded {
+		return &pb.TrustStatusResponse{
+			Trusted:  false,
+			Platform: runtime.GOOS,
+		}, nil
+	}
+
+	// 计算 CA 指纹
+	fingerprint := ""
+	if rawCert := s.manager.GetCARaw(); rawCert != nil {
+		hash := sha256.Sum256(rawCert)
+		fingerprint = hex.EncodeToString(hash[:])
+	}
+
+	return &pb.TrustStatusResponse{
+		Trusted:        true,
+		Platform:       runtime.GOOS,
+		CaFingerprint:  fingerprint,
+	}, nil
 }
 
 // === proto ↔ Go 转换函数 ===

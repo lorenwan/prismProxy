@@ -8,6 +8,10 @@ use crate::grpc_client::TrafficGetRequest;
 use crate::grpc_client::TrafficListRequest;
 use crate::grpc_client::TrafficStatsRequest;
 use crate::grpc_client::TrafficFilter;
+use crate::grpc_client::TrafficUpdateBookmarkRequest;
+use crate::grpc_client::TrafficUpdateNotesRequest;
+use crate::grpc_client::TrafficUpdateColorRequest;
+use crate::grpc_client::TrafficUpdateTagsRequest;
 use crate::state::AppState;
 
 /// 获取流量列表
@@ -139,4 +143,68 @@ pub async fn get_traffic_stats(
         .await
         .map_err(crate::error::AppError::Grpc)?;
     Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
+}
+
+/// 更新书签状态
+#[tauri::command]
+pub async fn update_traffic_bookmark(
+    state: State<'_, AppState>,
+    id: i64,
+    bookmarked: bool,
+) -> AppResult<()> {
+    let mut client = state.get_grpc_client().await?;
+    client
+        .traffic
+        .update_bookmark(TrafficUpdateBookmarkRequest { id, bookmarked })
+        .await
+        .map_err(crate::error::AppError::Grpc)?;
+    Ok(())
+}
+
+/// 更新备注
+#[tauri::command]
+pub async fn update_traffic_notes(
+    state: State<'_, AppState>,
+    id: i64,
+    notes: String,
+) -> AppResult<()> {
+    let mut client = state.get_grpc_client().await?;
+    client
+        .traffic
+        .update_notes(TrafficUpdateNotesRequest { id, notes })
+        .await
+        .map_err(crate::error::AppError::Grpc)?;
+    Ok(())
+}
+
+/// 更新颜色标记
+#[tauri::command]
+pub async fn update_traffic_color(
+    state: State<'_, AppState>,
+    id: i64,
+    color: String,
+) -> AppResult<()> {
+    let mut client = state.get_grpc_client().await?;
+    client
+        .traffic
+        .update_color(TrafficUpdateColorRequest { id, color })
+        .await
+        .map_err(crate::error::AppError::Grpc)?;
+    Ok(())
+}
+
+/// 更新标签
+#[tauri::command]
+pub async fn update_traffic_tags(
+    state: State<'_, AppState>,
+    id: i64,
+    tags: Vec<String>,
+) -> AppResult<()> {
+    let mut client = state.get_grpc_client().await?;
+    client
+        .traffic
+        .update_tags(TrafficUpdateTagsRequest { id, tags })
+        .await
+        .map_err(crate::error::AppError::Grpc)?;
+    Ok(())
 }

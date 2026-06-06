@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core'
-import type { Rule } from '../types'
+import type { Rule, RuleStats } from '../types'
 
 // 获取规则列表
 export async function getRules(): Promise<Rule[]> {
@@ -30,14 +30,20 @@ export async function deleteRule(id: string): Promise<void> {
   await invoke('delete_rule', { id })
 }
 
-// 切换规则启用状态
+// 切换规则启用状态（使用专用 Toggle RPC，避免反序列化完整 Rule）
 export async function toggleRule(id: string, enabled: boolean): Promise<void> {
-  await invoke('update_rule', { rule: JSON.stringify({ id, enabled }) })
+  await invoke('toggle_rule', { id, enabled })
 }
 
-// 批量启用/禁用（逐个调用）
+// 批量启用/禁用
 export async function batchToggleRules(ids: string[], enabled: boolean): Promise<void> {
   for (const id of ids) {
-    await invoke('update_rule', { rule: JSON.stringify({ id, enabled }) })
+    await invoke('toggle_rule', { id, enabled })
   }
+}
+
+// 获取规则统计
+export async function getRuleStats(): Promise<RuleStats> {
+  const result = await invoke<string>('get_rule_stats')
+  return JSON.parse(result)
 }

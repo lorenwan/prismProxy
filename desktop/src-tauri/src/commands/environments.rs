@@ -44,7 +44,7 @@ pub async fn create_environment(
 ) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
     let request: Environment = serde_json::from_str(&environment)
-        .map_err(|e| crate::error::AppError::Connection(format!("JSON 解析失败: {}", e)))?;
+        .map_err(|e| crate::error::AppError::Serialize(format!("JSON 解析失败: {}", e)))?;
     let response = client
         .environments
         .create(request)
@@ -61,7 +61,7 @@ pub async fn update_environment(
 ) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
     let request: Environment = serde_json::from_str(&environment)
-        .map_err(|e| crate::error::AppError::Connection(format!("JSON 解析失败: {}", e)))?;
+        .map_err(|e| crate::error::AppError::Serialize(format!("JSON 解析失败: {}", e)))?;
     let response = client
         .environments
         .update(request)
@@ -123,7 +123,7 @@ pub async fn import_environment(
 ) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
     let request: EnvironmentExport = serde_json::from_str(&environment_export)
-        .map_err(|e| crate::error::AppError::Connection(format!("JSON 解析失败: {}", e)))?;
+        .map_err(|e| crate::error::AppError::Serialize(format!("JSON 解析失败: {}", e)))?;
     let response = client
         .environments
         .import(request)

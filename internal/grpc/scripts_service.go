@@ -83,7 +83,8 @@ func (s *ScriptsServiceImpl) Delete(ctx context.Context, req *pb.ScriptDeleteReq
 
 // Toggle 启用/禁用脚本
 func (s *ScriptsServiceImpl) Toggle(ctx context.Context, req *pb.ScriptToggleRequest) (*pb.ToggleResponse, error) {
-	enabled, err := s.store.Toggle(req.GetId())
+	enabledVal := req.GetEnabled()
+	enabled, err := s.store.Toggle(req.GetId(), &enabledVal)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "切换脚本状态失败: %v", err)
 	}
@@ -132,15 +133,16 @@ func scriptToProto(sc *script.Script) *pb.Script {
 	}
 
 	return &pb.Script{
-		Id:        sc.ID,
-		Name:      sc.Name,
-		Content:   sc.Content,
-		Phase:     phase,
-		Enabled:   sc.Enabled,
-		Priority:  int32(sc.Priority),
-		Language:  string(sc.Language),
-		CreatedAt: sc.CreatedAt.Format(time.RFC3339),
-		UpdatedAt: sc.UpdatedAt.Format(time.RFC3339),
+		Id:          sc.ID,
+		Name:        sc.Name,
+		Description: sc.Description,
+		Content:     sc.Content,
+		Phase:       phase,
+		Enabled:     sc.Enabled,
+		Priority:    int32(sc.Priority),
+		Language:    string(sc.Language),
+		CreatedAt:   sc.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:   sc.UpdatedAt.Format(time.RFC3339),
 	}
 }
 
@@ -158,13 +160,14 @@ func protoToScript(p *pb.Script) *script.Script {
 	}
 
 	sc := &script.Script{
-		ID:       p.GetId(),
-		Name:     p.GetName(),
-		Content:  p.GetContent(),
-		Phase:    phase,
-		Enabled:  p.GetEnabled(),
-		Priority: int(p.GetPriority()),
-		Language: script.ScriptType(p.GetLanguage()),
+		ID:          p.GetId(),
+		Name:        p.GetName(),
+		Description: p.GetDescription(),
+		Content:     p.GetContent(),
+		Phase:       phase,
+		Enabled:     p.GetEnabled(),
+		Priority:    int(p.GetPriority()),
+		Language:    script.ScriptType(p.GetLanguage()),
 	}
 
 	if p.GetCreatedAt() != "" {

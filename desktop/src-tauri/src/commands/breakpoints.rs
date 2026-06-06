@@ -44,7 +44,7 @@ pub async fn create_breakpoint(
 ) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
     let request: Breakpoint = serde_json::from_str(&breakpoint)
-        .map_err(|e| crate::error::AppError::Connection(format!("JSON 解析失败: {}", e)))?;
+        .map_err(|e| crate::error::AppError::Serialize(format!("JSON 解析失败: {}", e)))?;
     let response = client
         .breakpoints
         .create(request)
@@ -61,7 +61,7 @@ pub async fn update_breakpoint(
 ) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
     let request: Breakpoint = serde_json::from_str(&breakpoint)
-        .map_err(|e| crate::error::AppError::Connection(format!("JSON 解析失败: {}", e)))?;
+        .map_err(|e| crate::error::AppError::Serialize(format!("JSON 解析失败: {}", e)))?;
     let response = client
         .breakpoints
         .update(request)
@@ -127,7 +127,7 @@ pub async fn resolve_breakpoint_session(
     let modified = modified_data
         .map(|d| {
             serde_json::from_str(&d)
-                .map_err(|e| crate::error::AppError::Connection(format!("JSON 解析失败: {}", e)))
+                .map_err(|e| crate::error::AppError::Serialize(format!("JSON 解析失败: {}", e)))
         })
         .transpose()?;
     let response = client

@@ -137,9 +137,9 @@ func (a *Analyzer) analyzeSecurity(tx *Transaction) *SecurityAnalysis {
 
 	// 检查响应中的安全头
 	securityHeaders := map[string]string{
-		"X-Content-Type-Options": "nosniff",
-		"X-Frame-Options":        "DENY 或 SAMEORIGIN",
-		"X-XSS-Protection":       "1; mode=block",
+		"X-Content-Type-Options":    "nosniff",
+		"X-Frame-Options":           "DENY 或 SAMEORIGIN",
+		"X-XSS-Protection":          "1; mode=block",
 		"Strict-Transport-Security": "HSTS",
 	}
 	for header, expected := range securityHeaders {
@@ -186,11 +186,11 @@ type AnalysisResult struct {
 
 // RequestAnalysis 请求分析
 type RequestAnalysis struct {
-	RequestType    string `json:"request_type"`
-	BodySize       int64  `json:"body_size"`
-	ContentType    string `json:"content_type"`
-	HeaderCount    int    `json:"header_count"`
-	SensitiveInfo  []SensitiveInfo `json:"sensitive_info,omitempty"`
+	RequestType   string          `json:"request_type"`
+	BodySize      int64           `json:"body_size"`
+	ContentType   string          `json:"content_type"`
+	HeaderCount   int             `json:"header_count"`
+	SensitiveInfo []SensitiveInfo `json:"sensitive_info,omitempty"`
 }
 
 // ResponseAnalysis 响应分析

@@ -25,7 +25,7 @@ export default function TrafficList() {
   // 过滤流量
   const filteredList = trafficList.filter((item) => {
     if (filters.method && item.method !== filters.method) return false
-    if (filters.status && !(item.status >= filters.status && item.status < filters.status + 100)) return false
+    if (filters.status && !(item.response?.status_code >= filters.status && item.response?.status_code < filters.status + 100)) return false
     if (filters.host && !item.host.includes(filters.host)) return false
     return true
   })
@@ -57,8 +57,8 @@ export default function TrafficList() {
                 selectedId === item.id ? 'traffic-row-selected' : ''
               }`}
             >
-              <span className={`w-16 font-mono ${getStatusColor(item.status)}`}>
-                {item.status}
+              <span className={`w-16 font-mono ${getStatusColor(item.response?.status_code ?? 0)}`}>
+                {item.response?.status_code ?? '-'}
               </span>
               <span className={`w-16 font-mono ${getMethodColor(item.method)}`}>
                 {item.method}
@@ -70,10 +70,10 @@ export default function TrafficList() {
                 {item.path}
               </span>
               <span className="w-20 text-right text-[#565f89]">
-                {item.duration}ms
+                {item.duration_ms}ms
               </span>
               <span className="w-20 text-right text-[#565f89]">
-                {new Date(item.requestTime).toLocaleTimeString()}
+                {new Date(item.timestamp).toLocaleTimeString()}
               </span>
             </div>
           ))

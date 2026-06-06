@@ -8,6 +8,8 @@ use crate::config::ConfigManager;
 pub struct AppState {
     pub grpc_client: Arc<Mutex<Option<GrpcClient>>>,
     pub sidecar_manager: Arc<Mutex<SidecarManager>>,
+    // TODO: ConfigManager 已初始化但未通过 Tauri 命令暴露给前端
+    // 需要添加 commands::config 模块来暴露 get_config / update_config 命令
     pub config_manager: Arc<Mutex<ConfigManager>>,
 }
 

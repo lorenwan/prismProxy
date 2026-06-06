@@ -22,28 +22,28 @@ pub async fn get_system_status(
 #[tauri::command]
 pub async fn start_proxy(
     state: State<'_, AppState>,
-) -> AppResult<()> {
+) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
-    client
+    let response = client
         .system
         .start_proxy(Empty {})
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 停止代理
 #[tauri::command]
 pub async fn stop_proxy(
     state: State<'_, AppState>,
-) -> AppResult<()> {
+) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
-    client
+    let response = client
         .system
         .stop_proxy(Empty {})
         .await
         .map_err(crate::error::AppError::Grpc)?;
-    Ok(())
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }
 
 /// 启用系统代理
@@ -110,7 +110,7 @@ pub async fn update_settings(
 ) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
     let app_settings: crate::grpc_client::Settings = serde_json::from_str(&settings)
-        .map_err(|e| crate::error::AppError::Connection(format!("JSON 解析失败: {}", e)))?;
+        .map_err(|e| crate::error::AppError::Serialize(format!("JSON 解析失败: {}", e)))?;
     let response = client
         .system
         .update_settings(app_settings)

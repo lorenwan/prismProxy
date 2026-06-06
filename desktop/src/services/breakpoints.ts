@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
-import type { Breakpoint, BreakpointSession, RequestData, ResponseData } from '../types'
+import type { Breakpoint, BreakpointSession, TrafficEntry } from '../types'
 
 // 获取断点列表
 export async function getBreakpoints(): Promise<Breakpoint[]> {
@@ -46,13 +46,13 @@ export async function getActiveSessions(): Promise<BreakpointSession[]> {
 export async function resumeSession(sessionId: string): Promise<void> {
   await invoke('resolve_breakpoint_session', {
     sessionId,
-    action: 'resume',
+    action: 'continue',
     modifiedData: null,
   })
 }
 
 // 修改并恢复断点会话
-export async function modifyAndResume(sessionId: string, data: RequestData | ResponseData): Promise<void> {
+export async function modifyAndResume(sessionId: string, data: TrafficEntry): Promise<void> {
   await invoke('resolve_breakpoint_session', {
     sessionId,
     action: 'modify',

@@ -52,12 +52,12 @@ export default function StatusBar() {
           <div className="flex items-center gap-1">
             <Clock size={12} />
             <span>
-              平均耗时: {stats.avgDuration.toFixed(0)}ms
+              平均耗时: {stats.avg_duration_ms.toFixed(0)}ms
             </span>
           </div>
           <span className="mx-3 text-[#30363d]">|</span>
           <span>
-            成功率: {stats.totalRequests > 0 ? Math.round((stats.successRequests / stats.totalRequests) * 100) : 0}%
+            成功率: {stats.total_requests > 0 ? Math.round((stats.success_count / stats.total_requests) * 100) : 0}%
           </span>
         </>
       )}

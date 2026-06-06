@@ -176,10 +176,16 @@ func rewriteTypeToProto(t rewrite.RewriteType) pb.RewriteType {
 		return pb.RewriteType_REWRITE_TYPE_ADD
 	case rewrite.RewriteRemoveHeader:
 		return pb.RewriteType_REWRITE_TYPE_REMOVE
-	case rewrite.RewriteReplaceHeader, rewrite.RewriteReplaceBody, rewrite.RewriteReplaceURL:
-		return pb.RewriteType_REWRITE_TYPE_REPLACE
-	case rewrite.RewriteMapLocal, rewrite.RewriteMapRemote:
-		return pb.RewriteType_REWRITE_TYPE_SET
+	case rewrite.RewriteReplaceHeader:
+		return pb.RewriteType_REWRITE_TYPE_REPLACE_HEADER
+	case rewrite.RewriteReplaceBody:
+		return pb.RewriteType_REWRITE_TYPE_REPLACE_BODY
+	case rewrite.RewriteReplaceURL:
+		return pb.RewriteType_REWRITE_TYPE_REPLACE_URL
+	case rewrite.RewriteMapLocal:
+		return pb.RewriteType_REWRITE_TYPE_MAP_LOCAL
+	case rewrite.RewriteMapRemote:
+		return pb.RewriteType_REWRITE_TYPE_MAP_REMOTE
 	default:
 		return pb.RewriteType_REWRITE_TYPE_UNSPECIFIED
 	}
@@ -195,6 +201,16 @@ func protoToRewriteType(t pb.RewriteType) rewrite.RewriteType {
 	case pb.RewriteType_REWRITE_TYPE_REPLACE:
 		return rewrite.RewriteReplaceHeader
 	case pb.RewriteType_REWRITE_TYPE_SET:
+		return rewrite.RewriteReplaceHeader
+	case pb.RewriteType_REWRITE_TYPE_REPLACE_HEADER:
+		return rewrite.RewriteReplaceHeader
+	case pb.RewriteType_REWRITE_TYPE_REPLACE_BODY:
+		return rewrite.RewriteReplaceBody
+	case pb.RewriteType_REWRITE_TYPE_REPLACE_URL:
+		return rewrite.RewriteReplaceURL
+	case pb.RewriteType_REWRITE_TYPE_MAP_LOCAL:
+		return rewrite.RewriteMapLocal
+	case pb.RewriteType_REWRITE_TYPE_MAP_REMOTE:
 		return rewrite.RewriteMapRemote
 	default:
 		return ""
@@ -204,10 +220,18 @@ func protoToRewriteType(t pb.RewriteType) rewrite.RewriteType {
 // rewriteWhereToProto 重写位置映射
 func rewriteWhereToProto(w rewrite.RewriteWhere) pb.RewriteWhere {
 	switch w {
-	case rewrite.RewriteWhereRequest:
+	case rewrite.RewriteWhereRequestHeader:
 		return pb.RewriteWhere_REWRITE_WHERE_REQUEST_HEADER
-	case rewrite.RewriteWhereResponse:
+	case rewrite.RewriteWhereResponseHeader:
 		return pb.RewriteWhere_REWRITE_WHERE_RESPONSE_HEADER
+	case rewrite.RewriteWhereRequestBody:
+		return pb.RewriteWhere_REWRITE_WHERE_REQUEST_BODY
+	case rewrite.RewriteWhereResponseBody:
+		return pb.RewriteWhere_REWRITE_WHERE_RESPONSE_BODY
+	case rewrite.RewriteWhereURLQuery:
+		return pb.RewriteWhere_REWRITE_WHERE_URL_QUERY
+	case rewrite.RewriteWhereURLPath:
+		return pb.RewriteWhere_REWRITE_WHERE_URL_PATH
 	default:
 		return pb.RewriteWhere_REWRITE_WHERE_UNSPECIFIED
 	}
@@ -216,10 +240,18 @@ func rewriteWhereToProto(w rewrite.RewriteWhere) pb.RewriteWhere {
 // protoToRewriteWhere 重写位置映射
 func protoToRewriteWhere(w pb.RewriteWhere) rewrite.RewriteWhere {
 	switch w {
-	case pb.RewriteWhere_REWRITE_WHERE_REQUEST_HEADER, pb.RewriteWhere_REWRITE_WHERE_REQUEST_BODY, pb.RewriteWhere_REWRITE_WHERE_URL_QUERY, pb.RewriteWhere_REWRITE_WHERE_URL_PATH:
-		return rewrite.RewriteWhereRequest
-	case pb.RewriteWhere_REWRITE_WHERE_RESPONSE_HEADER, pb.RewriteWhere_REWRITE_WHERE_RESPONSE_BODY:
-		return rewrite.RewriteWhereResponse
+	case pb.RewriteWhere_REWRITE_WHERE_REQUEST_HEADER:
+		return rewrite.RewriteWhereRequestHeader
+	case pb.RewriteWhere_REWRITE_WHERE_RESPONSE_HEADER:
+		return rewrite.RewriteWhereResponseHeader
+	case pb.RewriteWhere_REWRITE_WHERE_REQUEST_BODY:
+		return rewrite.RewriteWhereRequestBody
+	case pb.RewriteWhere_REWRITE_WHERE_RESPONSE_BODY:
+		return rewrite.RewriteWhereResponseBody
+	case pb.RewriteWhere_REWRITE_WHERE_URL_QUERY:
+		return rewrite.RewriteWhereURLQuery
+	case pb.RewriteWhere_REWRITE_WHERE_URL_PATH:
+		return rewrite.RewriteWhereURLPath
 	default:
 		return ""
 	}

@@ -1,5 +1,9 @@
 import { invoke } from '@tauri-apps/api/core'
 
+// TODO: 前端 IPC 调用缺少集中错误处理
+// 所有 invoke 调用应包装在 try/catch 中，统一处理 Tauri IPC 错误
+// 建议创建通用的 invokeWithRetry / invokeWithErrorHandling 工具函数
+
 // 代理状态
 export interface ProxyStatus {
   running: boolean
@@ -22,46 +26,39 @@ export async function getSystemStatus(): Promise<any> {
 
 // 启动代理
 export async function startProxy(): Promise<ProxyStatus> {
-  await invoke('start_proxy')
-  const status = await getSystemStatus()
-  return {
-    running: status?.proxyRunning || true,
-    addr: status?.proxyAddr || '',
-  }
+  const result = await invoke<string>('start_proxy')
+  return JSON.parse(result)
 }
 
 // 停止代理
 export async function stopProxy(): Promise<ProxyStatus> {
-  await invoke('stop_proxy')
-  return {
-    running: false,
-    addr: '',
-  }
+  const result = await invoke<string>('stop_proxy')
+  return JSON.parse(result)
 }
 
 // 获取代理状态
 export async function getProxyStatus(): Promise<ProxyStatus> {
   const status = await getSystemStatus()
   return {
-    running: status?.proxyRunning || false,
+    running: status?.proxyRunning ?? false,
     addr: status?.proxyAddr || '',
   }
 }
 
-// 启用系统代理（TODO: Rust 层暂未实现系统代理开关 IPC 命令）
+// 启用系统代理
 export async function enableSystemProxy(): Promise<SystemProxyStatus> {
-  console.warn('enableSystemProxy: 暂未实现 Tauri IPC')
-  return { enabled: false, proxyAddr: '', error: '暂未实现' }
+  const result = await invoke<string>('enable_system_proxy')
+  return JSON.parse(result)
 }
 
-// 禁用系统代理（TODO: Rust 层暂未实现系统代理开关 IPC 命令）
+// 禁用系统代理
 export async function disableSystemProxy(): Promise<SystemProxyStatus> {
-  console.warn('disableSystemProxy: 暂未实现 Tauri IPC')
-  return { enabled: false, proxyAddr: '', error: '暂未实现' }
+  const result = await invoke<string>('disable_system_proxy')
+  return JSON.parse(result)
 }
 
-// 获取系统代理状态（TODO: Rust 层暂未实现系统代理状态 IPC 命令）
+// 获取系统代理状态
 export async function getSystemProxyStatus(): Promise<SystemProxyStatus> {
-  console.warn('getSystemProxyStatus: 暂未实现 Tauri IPC')
-  return { enabled: false, proxyAddr: '' }
+  const result = await invoke<string>('get_system_proxy_status')
+  return JSON.parse(result)
 }

@@ -82,7 +82,7 @@ func (e *Engine) ProcessRequest(req *http.Request) (*http.Request, *http.Respons
 		}
 
 		for _, action := range rewriteRule.Actions {
-			if action.Where != RewriteWhereRequest {
+			if !action.Where.IsRequest() {
 				continue
 			}
 
@@ -128,7 +128,7 @@ func (e *Engine) ProcessResponse(req *http.Request, resp *http.Response) (*http.
 		}
 
 		for _, action := range rewriteRule.Actions {
-			if action.Where != RewriteWhereResponse {
+			if !action.Where.IsResponse() {
 				continue
 			}
 

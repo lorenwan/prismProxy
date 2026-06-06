@@ -24,6 +24,7 @@ func (s *ScriptStore) Init() error {
 	CREATE TABLE IF NOT EXISTS scripts (
 		id VARCHAR(36) PRIMARY KEY,
 		name VARCHAR(255),
+		description TEXT DEFAULT '',
 		content TEXT,
 		phase VARCHAR(20),
 		enabled BOOLEAN DEFAULT TRUE,
@@ -36,13 +37,19 @@ func (s *ScriptStore) Init() error {
 	CREATE INDEX IF NOT EXISTS idx_scripts_phase ON scripts(phase);
 	`
 	_, err := s.db.Exec(query)
-	return err
+	if err != nil {
+		return err
+	}
+
+	// 添加 description 列（如果不存在）
+	_, _ = s.db.Exec("ALTER TABLE scripts ADD COLUMN description TEXT DEFAULT ''")
+	return nil
 }
 
 // List 获取脚本列表
 func (s *ScriptStore) List() ([]*Script, error) {
 	query := `
-		SELECT id, name, content, phase, enabled, priority, language, created_at, updated_at
+		SELECT id, name, description, content, phase, enabled, priority, language, created_at, updated_at
 		FROM scripts
 		ORDER BY priority ASC, created_at DESC
 	`
@@ -57,7 +64,7 @@ func (s *ScriptStore) List() ([]*Script, error) {
 	for rows.Next() {
 		script := &Script{}
 		err := rows.Scan(
-			&script.ID, &script.Name, &script.Content,
+			&script.ID, &script.Name, &script.Description, &script.Content,
 			&script.Phase, &script.Enabled, &script.Priority,
 			&script.Language, &script.CreatedAt, &script.UpdatedAt,
 		)
@@ -73,13 +80,13 @@ func (s *ScriptStore) List() ([]*Script, error) {
 // Get 根据 ID 获取脚本
 func (s *ScriptStore) Get(id string) (*Script, error) {
 	query := `
-		SELECT id, name, content, phase, enabled, priority, language, created_at, updated_at
+		SELECT id, name, description, content, phase, enabled, priority, language, created_at, updated_at
 		FROM scripts WHERE id = ?
 	`
 
 	script := &Script{}
 	err := s.db.QueryRow(query, id).Scan(
-		&script.ID, &script.Name, &script.Content,
+		&script.ID, &script.Name, &script.Description, &script.Content,
 		&script.Phase, &script.Enabled, &script.Priority,
 		&script.Language, &script.CreatedAt, &script.UpdatedAt,
 	)
@@ -105,12 +112,12 @@ func (s *ScriptStore) Create(script *Script) error {
 	script.UpdatedAt = now
 
 	query := `
-		INSERT INTO scripts (id, name, content, phase, enabled, priority, language, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO scripts (id, name, description, content, phase, enabled, priority, language, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
 	_, err := s.db.Exec(query,
-		script.ID, script.Name, script.Content,
+		script.ID, script.Name, script.Description, script.Content,
 		script.Phase, script.Enabled, script.Priority,
 		script.Language, script.CreatedAt, script.UpdatedAt,
 	)
@@ -128,12 +135,12 @@ func (s *ScriptStore) Update(script *Script) error {
 
 	query := `
 		UPDATE scripts
-		SET name = ?, content = ?, phase = ?, enabled = ?, priority = ?, language = ?, updated_at = ?
+		SET name = ?, description = ?, content = ?, phase = ?, enabled = ?, priority = ?, language = ?, updated_at = ?
 		WHERE id = ?
 	`
 
 	result, err := s.db.Exec(query,
-		script.Name, script.Content, script.Phase,
+		script.Name, script.Description, script.Content, script.Phase,
 		script.Enabled, script.Priority, script.Language,
 		script.UpdatedAt, script.ID,
 	)
@@ -166,7 +173,7 @@ func (s *ScriptStore) Delete(id string) error {
 }
 
 // Toggle 启用/禁用脚本
-func (s *ScriptStore) Toggle(id string) (bool, error) {
+func (s *ScriptStore) Toggle(id string, enabled *bool) (bool, error) {
 	script, err := s.Get(id)
 	if err != nil {
 		return false, err
@@ -175,7 +182,11 @@ func (s *ScriptStore) Toggle(id string) (bool, error) {
 		return false, fmt.Errorf("脚本不存在")
 	}
 
-	script.Enabled = !script.Enabled
+	if enabled != nil {
+		script.Enabled = *enabled
+	} else {
+		script.Enabled = !script.Enabled
+	}
 	script.UpdatedAt = time.Now()
 
 	query := "UPDATE scripts SET enabled = ?, updated_at = ? WHERE id = ?"
@@ -190,7 +201,7 @@ func (s *ScriptStore) Toggle(id string) (bool, error) {
 // GetByPhase 获取指定阶段的脚本
 func (s *ScriptStore) GetByPhase(phase ScriptPhase) ([]*Script, error) {
 	query := `
-		SELECT id, name, content, phase, enabled, priority, language, created_at, updated_at
+		SELECT id, name, description, content, phase, enabled, priority, language, created_at, updated_at
 		FROM scripts
 		WHERE phase = ? AND enabled = TRUE
 		ORDER BY priority ASC
@@ -206,7 +217,7 @@ func (s *ScriptStore) GetByPhase(phase ScriptPhase) ([]*Script, error) {
 	for rows.Next() {
 		script := &Script{}
 		err := rows.Scan(
-			&script.ID, &script.Name, &script.Content,
+			&script.ID, &script.Name, &script.Description, &script.Content,
 			&script.Phase, &script.Enabled, &script.Priority,
 			&script.Language, &script.CreatedAt, &script.UpdatedAt,
 		)

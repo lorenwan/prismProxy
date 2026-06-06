@@ -34,8 +34,8 @@ type Debugger struct {
 
 // SessionResult 会话操作结果
 type SessionResult struct {
-	Action     string               `json:"action"` // release, modify, drop
-	Modified   *traffic.Transaction `json:"modified,omitempty"`
+	Action   string               `json:"action"` // release, modify, drop
+	Modified *traffic.Transaction `json:"modified,omitempty"`
 }
 
 // NewDebugger 创建新的调试器

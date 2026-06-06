@@ -95,8 +95,8 @@ type BlockSpec struct {
 
 // RuleStats 规则统计
 type RuleStats struct {
-	TotalRules    int `json:"total_rules"`
-	EnabledRules  int `json:"enabled_rules"`
-	DisabledRules int `json:"disabled_rules"`
+	TotalRules    int            `json:"total_rules"`
+	EnabledRules  int            `json:"enabled_rules"`
+	DisabledRules int            `json:"disabled_rules"`
 	HitCounts     map[string]int `json:"hit_counts"`
 }

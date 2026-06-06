@@ -50,13 +50,26 @@ pub async fn stream_chat(
 
     // 在后台任务中处理流，将gRPC流转换为Tauri事件
     tokio::spawn(async move {
-        while let Ok(Some(chunk)) = stream.message().await {
-            if let Ok(payload) = serde_json::to_string(&chunk) {
-                let _ = app.emit("ai:chat_chunk", payload);
+        loop {
+            match stream.message().await {
+                Ok(Some(chunk)) => {
+                    if let Ok(payload) = serde_json::to_string(&chunk) {
+                        let _ = app.emit("ai:chat_chunk", payload);
+                    }
+                }
+                Ok(None) => {
+                    // 流正常结束
+                    let _ = app.emit("ai:chat_end", ());
+                    break;
+                }
+                Err(e) => {
+                    // 流发生错误，发送错误事件
+                    let error_msg = format!("流式聊天错误: {}", e);
+                    let _ = app.emit("ai:chat_error", error_msg);
+                    break;
+                }
             }
         }
-        // 流结束
-        let _ = app.emit("ai:chat_end", ());
     });
 
     Ok(())

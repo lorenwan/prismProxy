@@ -5,6 +5,7 @@ use crate::grpc_client::Empty;
 use crate::grpc_client::Rule;
 use crate::grpc_client::RuleDeleteRequest;
 use crate::grpc_client::RuleGetRequest;
+use crate::grpc_client::RuleToggleRequest;
 use crate::state::AppState;
 
 /// 获取规则列表
@@ -36,7 +37,7 @@ pub async fn get_rule(state: State<'_, AppState>, id: String) -> AppResult<Strin
 pub async fn create_rule(state: State<'_, AppState>, rule: String) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
     let request: Rule = serde_json::from_str(&rule)
-        .map_err(|e| crate::error::AppError::Connection(format!("JSON 解析失败: {}", e)))?;
+        .map_err(|e| crate::error::AppError::Serialize(format!("JSON 解析失败: {}", e)))?;
     let response = client
         .rules
         .create(request)
@@ -50,7 +51,7 @@ pub async fn create_rule(state: State<'_, AppState>, rule: String) -> AppResult<
 pub async fn update_rule(state: State<'_, AppState>, rule: String) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
     let request: Rule = serde_json::from_str(&rule)
-        .map_err(|e| crate::error::AppError::Connection(format!("JSON 解析失败: {}", e)))?;
+        .map_err(|e| crate::error::AppError::Serialize(format!("JSON 解析失败: {}", e)))?;
     let response = client
         .rules
         .update(request)
@@ -69,4 +70,28 @@ pub async fn delete_rule(state: State<'_, AppState>, id: String) -> AppResult<()
         .await
         .map_err(crate::error::AppError::Grpc)?;
     Ok(())
+}
+
+/// 切换规则启用状态（专用 RPC，避免反序列化完整 Rule）
+#[tauri::command]
+pub async fn toggle_rule(state: State<'_, AppState>, id: String, enabled: bool) -> AppResult<()> {
+    let mut client = state.get_grpc_client().await?;
+    client
+        .rules
+        .toggle(RuleToggleRequest { id, enabled })
+        .await
+        .map_err(crate::error::AppError::Grpc)?;
+    Ok(())
+}
+
+/// 获取规则统计
+#[tauri::command]
+pub async fn get_rule_stats(state: State<'_, AppState>) -> AppResult<String> {
+    let mut client = state.get_grpc_client().await?;
+    let response = client
+        .rules
+        .stats(Empty {})
+        .await
+        .map_err(crate::error::AppError::Grpc)?;
+    Ok(crate::error::AppError::from_json_result(serde_json::to_string(&response.into_inner()))?)
 }

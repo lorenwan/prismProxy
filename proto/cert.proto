@@ -77,6 +77,8 @@ service CertService {
   rpc CheckCert(CertCheckRequest) returns (CertCheckResponse);
   // 清除所有证书缓存
   rpc ClearCerts(Empty) returns (Empty);
+  // 获取 CA 证书信任状态
+  rpc GetTrustStatus(Empty) returns (TrustStatusResponse);
 }
 
 message CertDeleteRequest {
@@ -85,4 +87,11 @@ message CertDeleteRequest {
 
 message CertCheckRequest {
   string domain = 1;
+}
+
+// 证书信任状态响应
+message TrustStatusResponse {
+  bool trusted = 1;
+  string platform = 2;
+  string ca_fingerprint = 3;
 }

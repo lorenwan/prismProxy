@@ -13,7 +13,7 @@ pub async fn generate_code(
 ) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
     let code_request: CodeGenRequest = serde_json::from_str(&request)
-        .map_err(|e| crate::error::AppError::Connection(format!("JSON 解析失败: {}", e)))?;
+        .map_err(|e| crate::error::AppError::Serialize(format!("JSON 解析失败: {}", e)))?;
     let response = client
         .codegen
         .generate(code_request)

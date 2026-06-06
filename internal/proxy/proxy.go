@@ -12,10 +12,10 @@ import (
 
 // Proxy 代理服务器
 type Proxy struct {
-	ca         tls.Certificate
-	certCache  sync.Map
-	storage    *storage.Storage
-	transport  *http.Transport
+	ca        tls.Certificate
+	certCache sync.Map
+	storage   *storage.Storage
+	transport *http.Transport
 }
 
 // NewProxy 创建新的代理实例
@@ -32,7 +32,7 @@ func NewProxy(caCert, caKey []byte, store *storage.Storage) (*Proxy, error) {
 	}
 
 	p := &Proxy{
-		ca:    ca,
+		ca:      ca,
 		storage: store,
 		transport: &http.Transport{
 			TLSClientConfig: &tls.Config{

@@ -189,14 +189,14 @@ func perfStatsToProto(stats *perf.PerfStats) *pb.PerfStats {
 	}
 
 	return &pb.PerfStats{
-		TotalRequests:  stats.TotalRequests,
-		AvgDurationMs:  stats.AvgDuration,
-		P50Ms:          stats.P50,
-		P90Ms:          stats.P90,
-		P99Ms:          stats.P99,
-		SlowRequests:   stats.SlowRequests,
-		MinDurationMs:  stats.MinDuration,
-		MaxDurationMs:  stats.MaxDuration,
+		TotalRequests:   stats.TotalRequests,
+		AvgDurationMs:   stats.AvgDuration,
+		P50Ms:           stats.P50,
+		P90Ms:           stats.P90,
+		P99Ms:           stats.P99,
+		SlowRequests:    stats.SlowRequests,
+		MinDurationMs:   stats.MinDuration,
+		MaxDurationMs:   stats.MaxDuration,
 		TotalDurationMs: stats.TotalDuration,
 	}
 }
@@ -215,21 +215,21 @@ func slowRequestToProto(r perf.SlowRequest) *pb.SlowRequest {
 
 func domainStatsToProto(ds perf.DomainStats) *pb.DomainStats {
 	return &pb.DomainStats{
-		Domain:        ds.Domain,
-		RequestCount:  ds.RequestCount,
-		AvgDurationMs: ds.AvgDuration,
-		ErrorCount:    ds.ErrorCount,
-		ErrorRate:     ds.ErrorRate,
+		Domain:          ds.Domain,
+		RequestCount:    ds.RequestCount,
+		AvgDurationMs:   ds.AvgDuration,
+		ErrorCount:      ds.ErrorCount,
+		ErrorRate:       ds.ErrorRate,
 		TotalDurationMs: ds.TotalDuration,
 	}
 }
 
 func timelinePointToProto(p perf.TimelinePoint) *pb.TimelinePoint {
 	return &pb.TimelinePoint{
-		Timestamp:    p.Timestamp.Format(time.RFC3339),
-		RequestCount: p.RequestCount,
+		Timestamp:     p.Timestamp.Format(time.RFC3339),
+		RequestCount:  p.RequestCount,
 		AvgDurationMs: p.AvgDuration,
-		ErrorCount:   p.ErrorCount,
+		ErrorCount:    p.ErrorCount,
 	}
 }
 

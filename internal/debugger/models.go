@@ -19,22 +19,22 @@ const (
 type BreakActionType string
 
 const (
-	BreakActionPause       BreakActionType = "pause"
-	BreakActionAutoModify  BreakActionType = "auto_modify"
-	BreakActionDrop        BreakActionType = "drop"
+	BreakActionPause      BreakActionType = "pause"
+	BreakActionAutoModify BreakActionType = "auto_modify"
+	BreakActionDrop       BreakActionType = "drop"
 )
 
 // Breakpoint 断点定义
 type Breakpoint struct {
-	ID        string              `json:"id"`
-	Name      string              `json:"name"`
-	Enabled   bool                `json:"enabled"`
-	Phase     Phase               `json:"phase"`
-	Match     rules.RuleMatch     `json:"match"`
-	Action    BreakAction         `json:"action"`
-	HitCount  int                 `json:"hit_count"`
-	CreatedAt time.Time           `json:"created_at"`
-	UpdatedAt time.Time           `json:"updated_at"`
+	ID        string          `json:"id"`
+	Name      string          `json:"name"`
+	Enabled   bool            `json:"enabled"`
+	Phase     Phase           `json:"phase"`
+	Match     rules.RuleMatch `json:"match"`
+	Action    BreakAction     `json:"action"`
+	HitCount  int             `json:"hit_count"`
+	CreatedAt time.Time       `json:"created_at"`
+	UpdatedAt time.Time       `json:"updated_at"`
 }
 
 // BreakAction 断点动作

@@ -30,11 +30,11 @@ type ProxyController struct {
 // SystemServiceImpl SystemService gRPC 实现
 type SystemServiceImpl struct {
 	pb.UnimplementedSystemServiceServer
-	traffic    *traffic.Manager
-	rules      *rules.Engine
-	store      *storage.Storage
-	certMgr    *cert.CertManager
-	proxyCtrl  *ProxyController
+	traffic     *traffic.Manager
+	rules       *rules.Engine
+	store       *storage.Storage
+	certMgr     *cert.CertManager
+	proxyCtrl   *ProxyController
 	systemProxy *proxy.SystemProxy
 }
 
@@ -209,7 +209,10 @@ func (s *SystemServiceImpl) EnableSystemProxy(ctx context.Context, req *pb.Empty
 		}, nil
 	}
 
-	_, addr := s.proxyCtrl.StatusFunc()
+	var addr string
+	if s.proxyCtrl != nil && s.proxyCtrl.StatusFunc != nil {
+		_, addr = s.proxyCtrl.StatusFunc()
+	}
 	return &pb.SystemProxyStatus{
 		Enabled:   true,
 		ProxyAddr: addr,

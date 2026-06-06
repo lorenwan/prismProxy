@@ -2,23 +2,28 @@ import { invoke } from '@tauri-apps/api/core'
 
 export interface CaInfo {
   subject: string
-  issuer: string
-  serialNumber: string
-  notBefore: string
-  notAfter: string
+  serial_number: string
+  not_before: string
+  not_after: string
   fingerprint: string
-  isInstalled: boolean
+  is_loaded: boolean
+}
+
+export interface CertCheckResult {
+  domain: string
+  exists: boolean
+  is_valid: boolean
+  is_expired: boolean
+  fingerprint: string
 }
 
 export interface CertInfo {
-  host: string
-  subject: string
+  domain: string
+  serial_number: string
+  not_before: string
+  not_after: string
   issuer: string
-  serialNumber: string
-  notBefore: string
-  notAfter: string
-  fingerprint: string
-  isValid: boolean
+  is_valid: boolean
 }
 
 // 获取 CA 证书信息
@@ -38,10 +43,10 @@ export async function regenerateCa(): Promise<CaInfo> {
   return JSON.parse(result)
 }
 
-// 导出 CA 证书
-export async function exportCa(): Promise<string> {
+// 导出 CA 证书（返回 cert PEM 和 key PEM）
+export async function exportCa(): Promise<{ cert_pem: string; key_pem: string }> {
   const result = await invoke<string>('export_ca')
-  return result
+  return JSON.parse(result)
 }
 
 // 签发域名证书
@@ -62,7 +67,7 @@ export async function deleteCert(domain: string): Promise<void> {
 }
 
 // 检查证书状态
-export async function checkCert(domain: string): Promise<CertInfo> {
+export async function checkCert(domain: string): Promise<CertCheckResult> {
   const result = await invoke<string>('check_cert', { domain })
   return JSON.parse(result)
 }
@@ -72,7 +77,8 @@ export async function clearCertCache(): Promise<void> {
   await invoke('clear_certs')
 }
 
-// 获取证书信任状态（TODO: 暂未实现对应的 Rust IPC 命令）
-export async function getTrustStatus(): Promise<{ trusted: boolean; platform: string }> {
-  return { trusted: false, platform: 'unknown' }
+// 获取证书信任状态
+export async function getTrustStatus(): Promise<{ trusted: boolean; platform: string; ca_fingerprint?: string }> {
+  const result = await invoke<string>('get_trust_status')
+  return JSON.parse(result)
 }

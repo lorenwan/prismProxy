@@ -10,43 +10,38 @@ export interface TrafficListResponse {
 
 export interface TrafficEntry {
   id: string
+  timestamp: string
+  duration_ms: number
   method: string
   url: string
   host: string
   path: string
   scheme: string
   port: number
-  status: number
-  statusCode: number
-  contentType: string
-  size: number
-  duration: number
-  requestTime: string
-  source: string
-  bookmarked: boolean
-  notes: string
-  color: string
-  tags: string[]
   request: RequestData
   response: ResponseData
+  client_addr: string
+  server_ip: string
+  bookmarked: boolean
+  color: string
+  notes: string
+  tags: string[]
 }
 
 export interface RequestData {
-  method: string
-  url: string
-  headers: Record<string, string>
+  headers: Record<string, { values: string[] }>
   body: string
-  contentType: string
-  size: number
+  body_size: number
+  content_type: string
 }
 
 export interface ResponseData {
-  status: number
-  statusText: string
-  headers: Record<string, string>
+  status_code: number
+  status_text: string
+  headers: Record<string, { values: string[] }>
   body: string
-  contentType: string
-  size: number
+  body_size: number
+  content_type: string
 }
 
 export interface PageMeta {
@@ -56,11 +51,16 @@ export interface PageMeta {
 }
 
 export interface TrafficStats {
-  totalRequests: number
-  successRequests: number
-  failedRequests: number
-  totalSize: number
-  avgDuration: number
+  total_requests: number
+  total_responses: number
+  avg_duration_ms: number
+  max_duration_ms: number
+  min_duration_ms: number
+  error_count: number
+  success_count: number
+  host_stats: Array<{ host: string; count: number; avg_time_ms: number }>
+  method_stats: Array<{ method: string; count: number }>
+  status_stats: Array<{ status_code: number; count: number }>
 }
 
 // --- Tauri IPC 函数 ---
@@ -126,10 +126,8 @@ export async function getTrafficList(params?: {
   method?: string
   status?: number
   host?: string
-}): Promise<{ data: { data: any[]; total: number } }> {
-  const page = params?.page ?? 1
-  const pageSize = params?.pageSize ?? 20
-  const result = await listTraffic(page, pageSize)
+}): Promise<{ data: { data: TrafficEntry[]; total: number } }> {
+  const result = await listTraffic(params?.page, params?.pageSize)
   return { data: { data: result.entries, total: result.pagination.total } }
 }
 
@@ -141,42 +139,37 @@ export async function getTrafficDetail(id: string): Promise<any> {
 }
 
 /**
- * 获取流量统计（向后兼容，返回模拟数据）
- * 注意：Rust 层暂未实现 get_traffic_stats IPC 命令
+ * 获取流量统计
  */
 export async function getTrafficStats(): Promise<{ data: TrafficStats }> {
-  // 当 Rust 层 IPC 命令就绪后替换为 invoke 调用
-  return { data: { totalRequests: 0, successRequests: 0, failedRequests: 0, totalSize: 0, avgDuration: 0 } }
+  const result = await invoke<TrafficStats>('get_traffic_stats')
+  return { data: result }
 }
 
 /**
- * 更新书签（向后兼容）
- * 注意：Rust 层暂未实现 update_bookmark IPC 命令
+ * 更新书签
  */
 export async function updateBookmark(id: string, bookmarked: boolean): Promise<void> {
-  // 当 Rust 层 IPC 命令就绪后替换为 invoke 调用
+  return invoke('update_traffic_bookmark', { id: parseInt(id, 10), bookmarked })
 }
 
 /**
- * 更新备注（向后兼容）
- * 注意：Rust 层暂未实现 update_notes IPC 命令
+ * 更新备注
  */
 export async function updateNotes(id: string, notes: string): Promise<void> {
-  // 当 Rust 层 IPC 命令就绪后替换为 invoke 调用
+  return invoke('update_traffic_notes', { id: parseInt(id, 10), notes })
 }
 
 /**
- * 更新颜色标记（向后兼容）
- * 注意：Rust 层暂未实现 update_color IPC 命令
+ * 更新颜色标记
  */
 export async function updateColor(id: string, color: string): Promise<void> {
-  // 当 Rust 层 IPC 命令就绪后替换为 invoke 调用
+  return invoke('update_traffic_color', { id: parseInt(id, 10), color })
 }
 
 /**
- * 更新标签（向后兼容）
- * 注意：Rust 层暂未实现 update_tags IPC 命令
+ * 更新标签
  */
 export async function updateTags(id: string, tags: string[]): Promise<void> {
-  // 当 Rust 层 IPC 命令就绪后替换为 invoke 调用
+  return invoke('update_traffic_tags', { id: parseInt(id, 10), tags })
 }

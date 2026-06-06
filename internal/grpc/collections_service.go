@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -154,12 +155,22 @@ func collectionToProto(c *collection.Collection) *pb.Collection {
 		items[i] = collectionItemToProto(&item)
 	}
 
-	return &pb.Collection{
+	pbCol := &pb.Collection{
 		Id:          c.ID,
 		Name:        c.Name,
 		Description: c.Description,
+		ParentId:    c.ParentID,
 		Items:       items,
 	}
+
+	if !c.CreatedAt.IsZero() {
+		pbCol.CreatedAt = c.CreatedAt.Format("2006-01-02T15:04:05Z07:00")
+	}
+	if !c.UpdatedAt.IsZero() {
+		pbCol.UpdatedAt = c.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")
+	}
+
+	return pbCol
 }
 
 // protoToCollection 转换集合
@@ -168,11 +179,25 @@ func protoToCollection(c *pb.Collection) *collection.Collection {
 		return nil
 	}
 
-	return &collection.Collection{
+	col := &collection.Collection{
 		ID:          c.GetId(),
 		Name:        c.GetName(),
 		Description: c.GetDescription(),
+		ParentID:    c.GetParentId(),
 	}
+
+	if t := c.GetCreatedAt(); t != "" {
+		if parsed, err := time.Parse(time.RFC3339, t); err == nil {
+			col.CreatedAt = parsed
+		}
+	}
+	if t := c.GetUpdatedAt(); t != "" {
+		if parsed, err := time.Parse(time.RFC3339, t); err == nil {
+			col.UpdatedAt = parsed
+		}
+	}
+
+	return col
 }
 
 // collectionItemToProto 转换集合项目
@@ -191,6 +216,21 @@ func collectionItemToProto(item *collection.CollectionItem) *pb.CollectionItem {
 		pbItem.Request = apiRequestToProto(item.Request)
 	}
 
+	// 映射子条目（文件夹嵌套）
+	if len(item.Items) > 0 {
+		pbItem.Items = make([]*pb.CollectionItem, len(item.Items))
+		for i, child := range item.Items {
+			pbItem.Items[i] = collectionItemToProto(&child)
+		}
+	}
+
+	if !item.CreatedAt.IsZero() {
+		pbItem.CreatedAt = item.CreatedAt.Format("2006-01-02T15:04:05Z07:00")
+	}
+	if !item.UpdatedAt.IsZero() {
+		pbItem.UpdatedAt = item.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")
+	}
+
 	return pbItem
 }
 
@@ -206,6 +246,7 @@ func apiRequestToProto(r *collection.APIRequest) *pb.APIRequest {
 		Method:      r.Method,
 		Url:         r.URL,
 		Description: r.Description,
+		Metadata:    r.Metadata,
 	}
 
 	// 转换请求头
@@ -257,6 +298,42 @@ func apiRequestToProto(r *collection.APIRequest) *pb.APIRequest {
 		}
 	}
 
+	// 转换测试用例
+	if len(r.Tests) > 0 {
+		pbReq.Tests = make([]*pb.Test, len(r.Tests))
+		for i, t := range r.Tests {
+			pbReq.Tests[i] = &pb.Test{
+				Name:     t.Name,
+				Type:     t.Type,
+				Target:   t.Target,
+				Operator: t.Operator,
+				Value:    t.Value,
+				Enabled:  t.Enabled,
+			}
+		}
+	}
+
+	// 转换变量
+	if len(r.Variables) > 0 {
+		pbReq.Variables = make([]*pb.KeyValue, len(r.Variables))
+		for i, v := range r.Variables {
+			pbReq.Variables[i] = &pb.KeyValue{
+				Key:         v.Key,
+				Value:       v.Value,
+				Description: v.Description,
+				Enabled:     v.Enabled,
+			}
+		}
+	}
+
+	// 时间戳
+	if !r.CreatedAt.IsZero() {
+		pbReq.CreatedAt = r.CreatedAt.Format("2006-01-02T15:04:05Z07:00")
+	}
+	if !r.UpdatedAt.IsZero() {
+		pbReq.UpdatedAt = r.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")
+	}
+
 	return pbReq
 }
 
@@ -272,6 +349,7 @@ func protoToAPIRequest(r *pb.APIRequest) *collection.APIRequest {
 		Method:      r.GetMethod(),
 		URL:         r.GetUrl(),
 		Description: r.GetDescription(),
+		Metadata:    r.GetMetadata(),
 	}
 
 	// 转换请求头
@@ -320,6 +398,46 @@ func protoToAPIRequest(r *pb.APIRequest) *collection.APIRequest {
 		req.Auth = &collection.AuthConfig{
 			Type:   r.GetAuth().GetType(),
 			Config: r.GetAuth().GetConfig(),
+		}
+	}
+
+	// 转换测试用例
+	if len(r.GetTests()) > 0 {
+		req.Tests = make([]collection.Test, len(r.GetTests()))
+		for i, t := range r.GetTests() {
+			req.Tests[i] = collection.Test{
+				Name:     t.GetName(),
+				Type:     t.GetType(),
+				Target:   t.GetTarget(),
+				Operator: t.GetOperator(),
+				Value:    t.GetValue(),
+				Enabled:  t.GetEnabled(),
+			}
+		}
+	}
+
+	// 转换变量
+	if len(r.GetVariables()) > 0 {
+		req.Variables = make([]collection.KeyValue, len(r.GetVariables()))
+		for i, v := range r.GetVariables() {
+			req.Variables[i] = collection.KeyValue{
+				Key:         v.GetKey(),
+				Value:       v.GetValue(),
+				Description: v.GetDescription(),
+				Enabled:     v.GetEnabled(),
+			}
+		}
+	}
+
+	// 时间戳
+	if t := r.GetCreatedAt(); t != "" {
+		if parsed, err := time.Parse(time.RFC3339, t); err == nil {
+			req.CreatedAt = parsed
+		}
+	}
+	if t := r.GetUpdatedAt(); t != "" {
+		if parsed, err := time.Parse(time.RFC3339, t); err == nil {
+			req.UpdatedAt = parsed
 		}
 	}
 

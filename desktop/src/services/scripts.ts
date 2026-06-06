@@ -45,7 +45,7 @@ export async function deleteScript(id: string): Promise<void> {
 
 // 切换脚本启用状态
 export async function toggleScript(id: string, enabled: boolean): Promise<void> {
-  await invoke('toggle_script', { id })
+  await invoke('toggle_script', { id, enabled })
 }
 
 // 测试运行脚本
@@ -61,6 +61,6 @@ export async function testScript(id: string, transactionId: string): Promise<{ o
 // 批量启用/禁用（逐个调用）
 export async function batchToggleScripts(ids: string[], enabled: boolean): Promise<void> {
   for (const id of ids) {
-    await invoke('toggle_script', { id })
+    await invoke('toggle_script', { id, enabled })
   }
 }

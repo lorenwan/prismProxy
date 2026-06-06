@@ -8,10 +8,10 @@ import (
 
 // StatsCollector 统计收集器
 type StatsCollector struct {
-	mu             sync.RWMutex
-	durations      []int64
-	window         *SlidingWindow
-	lastCleanup    time.Time
+	mu              sync.RWMutex
+	durations       []int64
+	window          *SlidingWindow
+	lastCleanup     time.Time
 	cleanupInterval time.Duration
 }
 

@@ -55,6 +55,9 @@ func (s *BreakpointsServiceImpl) Get(ctx context.Context, req *pb.BreakpointGetR
 // Create 创建断点
 func (s *BreakpointsServiceImpl) Create(ctx context.Context, req *pb.Breakpoint) (*pb.Breakpoint, error) {
 	bp := protoToBreakpoint(req)
+	now := time.Now()
+	bp.CreatedAt = now
+	bp.UpdatedAt = now
 	if err := s.debugger.CreateBreakpoint(bp); err != nil {
 		return nil, status.Errorf(codes.Internal, "创建断点失败: %v", err)
 	}
@@ -65,6 +68,7 @@ func (s *BreakpointsServiceImpl) Create(ctx context.Context, req *pb.Breakpoint)
 // Update 更新断点
 func (s *BreakpointsServiceImpl) Update(ctx context.Context, req *pb.Breakpoint) (*pb.Breakpoint, error) {
 	bp := protoToBreakpoint(req)
+	bp.UpdatedAt = time.Now()
 	if err := s.debugger.UpdateBreakpoint(bp); err != nil {
 		return nil, status.Errorf(codes.Internal, "更新断点失败: %v", err)
 	}
@@ -290,6 +294,7 @@ func breakActionTypeToProto(t debugger.BreakActionType) pb.BreakActionType {
 		return pb.BreakActionType_BREAK_ACTION_MODIFY
 	case debugger.BreakActionDrop:
 		return pb.BreakActionType_BREAK_ACTION_DROP
+	// TODO: 实现 BREAK_ACTION_DELAY 延迟动作类型
 	default:
 		return pb.BreakActionType_BREAK_ACTION_UNSPECIFIED
 	}

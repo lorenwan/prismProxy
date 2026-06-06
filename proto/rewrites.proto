@@ -10,10 +10,15 @@ import "rules.proto";
 // 重写类型
 enum RewriteType {
   REWRITE_TYPE_UNSPECIFIED = 0;
-  REWRITE_TYPE_ADD = 1;       // 添加
-  REWRITE_TYPE_REMOVE = 2;    // 移除
-  REWRITE_TYPE_REPLACE = 3;   // 替换
-  REWRITE_TYPE_SET = 4;       // 设置（覆盖）
+  REWRITE_TYPE_ADD = 1;              // 添加 Header
+  REWRITE_TYPE_REMOVE = 2;           // 移除 Header
+  REWRITE_TYPE_REPLACE = 3;          // 替换（通用，保留兼容）
+  REWRITE_TYPE_SET = 4;              // 设置（通用，保留兼容）
+  REWRITE_TYPE_REPLACE_HEADER = 5;   // 替换 Header
+  REWRITE_TYPE_REPLACE_BODY = 6;     // 替换 Body
+  REWRITE_TYPE_REPLACE_URL = 7;      // 替换 URL
+  REWRITE_TYPE_MAP_LOCAL = 8;        // 映射到本地文件
+  REWRITE_TYPE_MAP_REMOTE = 9;       // 映射到远程 URL
 }
 
 // 重写位置

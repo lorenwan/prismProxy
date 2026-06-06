@@ -24,6 +24,7 @@ message Script {
   string language = 7;
   string created_at = 8;
   string updated_at = 9;
+  string description = 10;
 }
 
 // 脚本执行记录
@@ -77,6 +78,7 @@ message ScriptDeleteRequest {
 
 message ScriptToggleRequest {
   string id = 1;
+  bool enabled = 2;
 }
 
 message ToggleResponse {

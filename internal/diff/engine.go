@@ -463,4 +463,3 @@ func (e *DiffEngine) CompareQuery(left, right url.Values) DiffResult {
 
 	return result
 }
-

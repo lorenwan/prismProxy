@@ -41,7 +41,7 @@ message TrafficEntry {
   string host = 6;             // 主机名
   string path = 7;             // 请求路径
   string scheme = 8;           // 协议 (http/https)
-  string port = 9;             // 端口
+  int32 port = 9;              // 端口
   RequestData request = 10;    // 请求数据
   ResponseData response = 11;  // 响应数据
   string client_addr = 12;     // 客户端地址
@@ -121,6 +121,38 @@ service TrafficService {
   rpc Stats(TrafficStatsRequest) returns (TrafficStats);
   // 订阅流量事件 (服务端流)
   rpc Subscribe(Empty) returns (stream TrafficEvent);
+  // 更新书签状态
+  rpc UpdateBookmark(TrafficUpdateBookmarkRequest) returns (Empty);
+  // 更新备注
+  rpc UpdateNotes(TrafficUpdateNotesRequest) returns (Empty);
+  // 更新颜色标记
+  rpc UpdateColor(TrafficUpdateColorRequest) returns (Empty);
+  // 更新标签
+  rpc UpdateTags(TrafficUpdateTagsRequest) returns (Empty);
+}
+
+// 更新书签请求
+message TrafficUpdateBookmarkRequest {
+  int64 id = 1;
+  bool bookmarked = 2;
+}
+
+// 更新备注请求
+message TrafficUpdateNotesRequest {
+  int64 id = 1;
+  string notes = 2;
+}
+
+// 更新颜色请求
+message TrafficUpdateColorRequest {
+  int64 id = 1;
+  string color = 2;
+}
+
+// 更新标签请求
+message TrafficUpdateTagsRequest {
+  int64 id = 1;
+  repeated string tags = 2;
 }
 
 message TrafficListRequest {

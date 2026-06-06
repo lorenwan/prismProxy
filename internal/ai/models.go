@@ -48,7 +48,7 @@ type OllamaConfig struct {
 
 // ChatMessage 聊天消息
 type ChatMessage struct {
-	Role    string `json:"role"`    // system, user, assistant
+	Role    string `json:"role"` // system, user, assistant
 	Content string `json:"content"`
 }
 
@@ -61,10 +61,10 @@ type ChatRequest struct {
 
 // ChatResponse 聊天响应
 type ChatResponse struct {
-	Content   string `json:"content"`
-	Provider  string `json:"provider"`
-	Model     string `json:"model"`
-	Usage     *Usage `json:"usage,omitempty"`
+	Content  string `json:"content"`
+	Provider string `json:"provider"`
+	Model    string `json:"model"`
+	Usage    *Usage `json:"usage,omitempty"`
 }
 
 // Usage token 用量
@@ -83,8 +83,8 @@ type StreamChunk struct {
 
 // AnalysisResult 流量分析结果
 type AnalysisResult struct {
-	Summary    string        `json:"summary"`
-	Issues     []Issue       `json:"issues,omitempty"`
+	Summary     string       `json:"summary"`
+	Issues      []Issue      `json:"issues,omitempty"`
 	Suggestions []Suggestion `json:"suggestions,omitempty"`
 }
 
@@ -105,9 +105,9 @@ type Suggestion struct {
 
 // SecurityReport 安全检测报告
 type SecurityReport struct {
-	RiskLevel string         `json:"risk_level"` // critical, high, medium, low, safe
+	RiskLevel string            `json:"risk_level"` // critical, high, medium, low, safe
 	Findings  []SecurityFinding `json:"findings"`
-	Summary   string         `json:"summary"`
+	Summary   string            `json:"summary"`
 }
 
 // SecurityFinding 安全发现
@@ -116,7 +116,7 @@ type SecurityFinding struct {
 	Category    string `json:"category"` // injection, auth, exposure, etc
 	Title       string `json:"title"`
 	Description string `json:"description"`
-	Location    string `json:"location"` // 请求/响应中的位置
+	Location    string `json:"location"`    // 请求/响应中的位置
 	Remediation string `json:"remediation"` // 修复建议
 }
 

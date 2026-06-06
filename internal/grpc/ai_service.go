@@ -42,6 +42,7 @@ func (s *AIServiceImpl) Chat(ctx context.Context, req *pb.ChatRequest) (*pb.Chat
 		Content:  resp.Content,
 		Provider: resp.Provider,
 		Model:    resp.Model,
+		Usage:    usageToProto(resp.Usage),
 	}, nil
 }
 
@@ -251,6 +252,18 @@ func testCasesToProto(tests []*ai.TestCase) []*pb.TestCase {
 		result[i] = pbTest
 	}
 	return result
+}
+
+// usageToProto 将领域 Usage 转换为 Proto Usage
+func usageToProto(u *ai.Usage) *pb.Usage {
+	if u == nil {
+		return nil
+	}
+	return &pb.Usage{
+		PromptTokens:     int32(u.PromptTokens),
+		CompletionTokens: int32(u.CompletionTokens),
+		TotalTokens:      int32(u.TotalTokens),
+	}
 }
 
 // 确保 AIServiceImpl 实现了 pb.AIServiceServer

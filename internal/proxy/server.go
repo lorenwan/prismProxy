@@ -14,8 +14,8 @@ import (
 
 // Config 代理配置
 type Config struct {
-	ListenAddr string
-	Port       int
+	ListenAddr  string
+	Port        int
 	EnableHTTPS bool
 	EnableMITM  bool
 }
@@ -62,7 +62,7 @@ func (s *Server) Start() error {
 	}
 
 	addr := fmt.Sprintf("%s:%d", s.config.ListenAddr, s.config.Port)
-	
+
 	s.server = &http.Server{
 		Addr:    addr,
 		Handler: s,
@@ -92,7 +92,7 @@ func (s *Server) Stop() error {
 	if s.server != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		
+
 		if err := s.server.Shutdown(ctx); err != nil {
 			log.Printf("[WARN] 代理关闭错误: %v", err)
 		}

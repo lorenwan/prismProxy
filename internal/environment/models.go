@@ -26,9 +26,9 @@ type Variable struct {
 
 // EnvironmentExport 导出格式
 type EnvironmentExport struct {
-	Version     string            `json:"version"`
-	Name        string            `json:"name"`
-	Variables   []VariableExport  `json:"variables"`
+	Version   string           `json:"version"`
+	Name      string           `json:"name"`
+	Variables []VariableExport `json:"variables"`
 }
 
 // VariableExport 变量导出格式

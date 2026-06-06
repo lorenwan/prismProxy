@@ -3,7 +3,8 @@ import { listen } from '@tauri-apps/api/event'
 import type { ChatMessage, Settings } from '../types'
 
 // 发送聊天消息（非流式）
-export async function sendMessage(messages: ChatMessage[], provider?: string): Promise<{ message: ChatMessage }> {
+// 注意: model 字段被重载为 provider 选择器，传入 provider 名称而非具体模型名
+export async function sendMessage(messages: ChatMessage[], provider?: string): Promise<{ content: string; provider: string; model: string; usage?: { promptTokens: number; completionTokens: number; totalTokens: number } }> {
   const result = await invoke<string>('chat', {
     messages: messages.map((m) => ({ role: m.role, content: m.content })),
     model: provider,
@@ -12,6 +13,7 @@ export async function sendMessage(messages: ChatMessage[], provider?: string): P
 }
 
 // 发送流式聊天消息
+// 注意: model 字段被重载为 provider 选择器，传入 provider 名称而非具体模型名
 // 返回兼容 AbortController 的对象，支持 abort() 取消
 export function sendMessageStream(
   messages: ChatMessage[],
@@ -23,6 +25,7 @@ export function sendMessageStream(
   const controller = new AbortController()
   let unlistenChunk: (() => void) | null = null
   let unlistenEnd: (() => void) | null = null
+  let unlistenError: (() => void) | null = null
 
   // 启动流式聊天
   invoke('stream_chat', {
@@ -49,18 +52,32 @@ export function sendMessageStream(
   listen('ai:chat_end', () => {
     if (controller.signal.aborted) return
     onDone()
-    unlistenChunk?.()
-    unlistenEnd?.()
+    cleanup()
   }).then((unlisten) => {
     unlistenEnd = unlisten
   })
+
+  // 监听错误事件
+  listen<string>('ai:chat_error', (event) => {
+    if (controller.signal.aborted) return
+    onError(new Error(event.payload))
+    cleanup()
+  }).then((unlisten) => {
+    unlistenError = unlisten
+  })
+
+  // 清理所有事件监听
+  const cleanup = () => {
+    unlistenChunk?.()
+    unlistenEnd?.()
+    unlistenError?.()
+  }
 
   // 包装 abort 方法以同时清理事件监听
   const originalAbort = controller.abort.bind(controller)
   controller.abort = () => {
     originalAbort()
-    unlistenChunk?.()
-    unlistenEnd?.()
+    cleanup()
   }
 
   return controller
@@ -69,22 +86,22 @@ export function sendMessageStream(
 // 检查 AI 服务可用性
 export async function checkAiAvailability(): Promise<boolean> {
   const result = await invoke<string>('check_ai_availability')
+  const response = JSON.parse(result) as { available: boolean; providers: string[] }
+  return response.available
+}
+
+// 获取设置
+export async function getSettings(): Promise<Settings> {
+  const result = await invoke<string>('get_settings')
   return JSON.parse(result)
 }
 
-// 获取设置（TODO: Rust 层暂未实现 settings IPC 命令）
-export async function getSettings(): Promise<Settings> {
-  // 当 Rust 层 settings IPC 命令就绪后替换为 invoke 调用
-  return {
-    proxy: { port: 8888, mitmEnabled: false, caCertPath: '' },
-    ai: { provider: 'openai', apiKey: '', baseUrl: '', model: '' },
-  }
-}
-
-// 更新设置（TODO: Rust 层暂未实现 settings IPC 命令）
+// 更新设置
 export async function updateSettings(settings: Partial<Settings>): Promise<Settings> {
-  // 当 Rust 层 settings IPC 命令就绪后替换为 invoke 调用
-  return settings as Settings
+  const result = await invoke<string>('update_settings', {
+    settings: JSON.stringify(settings),
+  })
+  return JSON.parse(result)
 }
 
 // 下载 CA 证书（TODO: 需要通过 Tauri 文件对话框实现）

@@ -119,6 +119,22 @@ service CollectionsService {
   rpc DeleteRequest(DeleteRequestRequest) returns (Empty);
   // 执行请求
   rpc ExecuteRequest(ExecuteRequestRequest) returns (ExecutionResult);
+  // 导出集合
+  rpc ExportCollection(CollectionGetRequest) returns (ExportCollectionResponse);
+  // 导入集合
+  rpc ImportCollection(ImportCollectionRequest) returns (Collection);
+}
+
+// 导出集合响应
+message ExportCollectionResponse {
+  bytes data = 1;
+  string filename = 2;
+}
+
+// 导入集合请求
+message ImportCollectionRequest {
+  bytes data = 1;
+  string filename = 2;
 }
 
 message CollectionListResponse {

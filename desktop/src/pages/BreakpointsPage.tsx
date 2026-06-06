@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { Breakpoint, BreakpointSession } from '../types'
+import type { Breakpoint, BreakpointSession, RuleMatch, BreakAction } from '../types'
 import {
   getBreakpoints,
   createBreakpoint,
@@ -10,20 +10,68 @@ import {
   resumeSession,
 } from '../services/breakpoints'
 
-// 空断点模板
-const emptyBp: Partial<Breakpoint> = {
+// 简化表单状态（用于 UI 编辑）
+interface BreakpointFormState {
+  name: string
+  enabled: boolean
+  phase: 'request' | 'response'
+  matchType: string
+  matchValue: string
+}
+
+const emptyForm: BreakpointFormState = {
   name: '',
   enabled: true,
   phase: 'request',
-  matchType: 'path',
+  matchType: 'host',
   matchValue: '',
+}
+
+// 从 Breakpoint 转换为表单状态
+function bpToForm(bp: Breakpoint): BreakpointFormState {
+  let matchType = 'host'
+  let matchValue = ''
+  if (bp.match?.host_pattern) {
+    matchType = 'host'
+    matchValue = bp.match.host_pattern
+  } else if (bp.match?.url_wildcard) {
+    matchType = 'url'
+    matchValue = bp.match.url_wildcard
+  } else if (bp.match?.url_pattern) {
+    matchType = 'path'
+    matchValue = bp.match.url_pattern
+  }
+  return {
+    name: bp.name || '',
+    enabled: bp.enabled ?? true,
+    phase: bp.phase || 'request',
+    matchType,
+    matchValue,
+  }
+}
+
+// 从表单状态构建 RuleMatch
+function formToMatch(form: BreakpointFormState): RuleMatch {
+  const match: RuleMatch = {}
+  switch (form.matchType) {
+    case 'host':
+      match.host_pattern = form.matchValue
+      break
+    case 'path':
+      match.url_pattern = form.matchValue
+      break
+    case 'url':
+      match.url_wildcard = form.matchValue
+      break
+  }
+  return match
 }
 
 export default function BreakpointsPage() {
   const [breakpoints, setBreakpoints] = useState<Breakpoint[]>([])
   const [sessions, setSessions] = useState<BreakpointSession[]>([])
   const [selected, setSelected] = useState<Breakpoint | null>(null)
-  const [editing, setEditing] = useState<Partial<Breakpoint>>(emptyBp)
+  const [editing, setEditing] = useState<BreakpointFormState>(emptyForm)
   const [isNew, setIsNew] = useState(false)
 
   useEffect(() => {
@@ -34,26 +82,33 @@ export default function BreakpointsPage() {
   // 选中断点
   function handleSelect(bp: Breakpoint) {
     setSelected(bp)
-    setEditing(bp)
+    setEditing(bpToForm(bp))
     setIsNew(false)
   }
 
   // 新增
   function handleNew() {
     setSelected(null)
-    setEditing({ ...emptyBp })
+    setEditing({ ...emptyForm })
     setIsNew(true)
   }
 
   // 保存
   async function handleSave() {
+    const bpData: Partial<Breakpoint> = {
+      name: editing.name,
+      enabled: editing.enabled,
+      phase: editing.phase,
+      match: formToMatch(editing),
+      action: { type: 'pause' },
+    }
     if (isNew) {
-      const created = await createBreakpoint(editing)
+      const created = await createBreakpoint(bpData)
       setBreakpoints([...breakpoints, created])
       setSelected(created)
       setIsNew(false)
     } else if (selected) {
-      const updated = await updateBreakpoint(selected.id, editing)
+      const updated = await updateBreakpoint(selected.id, bpData)
       setBreakpoints(breakpoints.map((b) => (b.id === selected.id ? updated : b)))
       setSelected(updated)
     }
@@ -65,7 +120,7 @@ export default function BreakpointsPage() {
     await deleteBreakpoint(selected.id)
     setBreakpoints(breakpoints.filter((b) => b.id !== selected.id))
     setSelected(null)
-    setEditing(emptyBp)
+    setEditing(emptyForm)
     setIsNew(false)
   }
 
@@ -109,7 +164,10 @@ export default function BreakpointsPage() {
               <div className="flex-1 min-w-0">
                 <div className="text-sm truncate">{bp.name || '未命名断点'}</div>
                 <div className="text-xs text-[#565f89]">
-                  {bp.matchType}: {bp.matchValue} · 命中 {bp.hitCount} 次
+                  {bp.match?.host_pattern ? `host: ${bp.match.host_pattern}` :
+                   bp.match?.url_pattern ? `path: ${bp.match.url_pattern}` :
+                   bp.match?.url_wildcard ? `url: ${bp.match.url_wildcard}` :
+                   '未设置匹配'} · 命中 {bp.hitCount} 次
                 </div>
               </div>
 
@@ -174,7 +232,7 @@ export default function BreakpointsPage() {
               <div className="flex gap-2">
                 <select
                   value={editing.matchType || 'path'}
-                  onChange={(e) => setEditing({ ...editing, matchType: e.target.value as Breakpoint['matchType'] })}
+                  onChange={(e) => setEditing({ ...editing, matchType: e.target.value })}
                   className="px-3 py-2 bg-[#1a1b26] border border-[#3b4261] rounded text-sm focus:border-[#7aa2f7] focus:outline-none"
                 >
                   <option value="host">Host</option>

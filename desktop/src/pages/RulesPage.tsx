@@ -1,29 +1,35 @@
 import { useState, useEffect } from 'react'
-import type { Rule } from '../types'
+import type { Rule, RuleMatch, RuleAction } from '../types'
 import { getRules, createRule, updateRule, deleteRule, toggleRule, batchToggleRules } from '../services/rules'
 
 // 匹配类型选项
 const matchTypes = [
   { value: 'host', label: 'Host' },
-  { value: 'path', label: 'Path' },
+  { value: 'path', label: 'Path (URL 正则)' },
   { value: 'method', label: 'Method' },
-  { value: 'url', label: 'URL' },
-  { value: 'header', label: 'Header' },
-  { value: 'body', label: 'Body' },
+  { value: 'url', label: 'URL 通配符' },
 ]
 
 // 动作类型选项
 const actionTypes = [
   { value: 'block', label: '阻止' },
   { value: 'redirect', label: '重定向' },
-  { value: 'modify_request', label: '修改请求' },
-  { value: 'modify_response', label: '修改响应' },
+  { value: 'modify', label: '修改' },
   { value: 'delay', label: '延迟' },
-  { value: 'mock', label: 'Mock 响应' },
 ]
 
-// 空规则模板
-const emptyRule: Partial<Rule> = {
+// 简化表单状态（用于 UI 编辑）
+interface RuleFormState {
+  name: string
+  enabled: boolean
+  priority: number
+  matchType: string
+  matchValue: string
+  actionType: string
+  actionValue: string
+}
+
+const emptyForm: RuleFormState = {
   name: '',
   enabled: true,
   priority: 0,
@@ -33,10 +39,93 @@ const emptyRule: Partial<Rule> = {
   actionValue: '',
 }
 
+// 从 Rule 转换为表单状态
+function ruleToForm(rule: Rule): RuleFormState {
+  let matchType = 'host'
+  let matchValue = ''
+  if (rule.match?.host_pattern) {
+    matchType = 'host'
+    matchValue = rule.match.host_pattern
+  } else if (rule.match?.url_wildcard) {
+    matchType = 'url'
+    matchValue = rule.match.url_wildcard
+  } else if (rule.match?.url_pattern) {
+    matchType = 'path'
+    matchValue = rule.match.url_pattern
+  } else if (rule.match?.methods?.length) {
+    matchType = 'method'
+    matchValue = rule.match.methods.join(',')
+  }
+
+  let actionType = 'block'
+  let actionValue = ''
+  if (rule.action?.type) {
+    actionType = rule.action.type
+    if (rule.action.type === 'redirect') {
+      actionValue = rule.action.remote_url || rule.action.local_path || ''
+    } else if (rule.action.type === 'block') {
+      actionValue = rule.action.block_response?.body || ''
+    } else if (rule.action.type === 'modify') {
+      actionValue = rule.action.modify?.body_replace || ''
+    } else if (rule.action.type === 'delay') {
+      actionValue = String(rule.action.delay_ms || 0)
+    }
+  }
+
+  return {
+    name: rule.name || '',
+    enabled: rule.enabled ?? true,
+    priority: rule.priority || 0,
+    matchType,
+    matchValue,
+    actionType,
+    actionValue,
+  }
+}
+
+// 从表单状态构建 Rule 的 match 和 action
+function formToRuleMatch(form: RuleFormState): RuleMatch {
+  const match: RuleMatch = {}
+  switch (form.matchType) {
+    case 'host':
+      match.host_pattern = form.matchValue
+      break
+    case 'path':
+      match.url_pattern = form.matchValue
+      break
+    case 'url':
+      match.url_wildcard = form.matchValue
+      break
+    case 'method':
+      match.methods = form.matchValue.split(',').map((s) => s.trim()).filter(Boolean)
+      break
+  }
+  return match
+}
+
+function formToRuleAction(form: RuleFormState): RuleAction {
+  const action: RuleAction = { type: form.actionType as RuleAction['type'] }
+  switch (form.actionType) {
+    case 'redirect':
+      action.remote_url = form.actionValue
+      break
+    case 'block':
+      action.block_response = { body: form.actionValue, status_code: 200 }
+      break
+    case 'modify':
+      action.modify = { body_replace: form.actionValue }
+      break
+    case 'delay':
+      action.delay_ms = parseInt(form.actionValue) || 0
+      break
+  }
+  return action
+}
+
 export default function RulesPage() {
   const [rules, setRules] = useState<Rule[]>([])
   const [selected, setSelected] = useState<Rule | null>(null)
-  const [editing, setEditing] = useState<Partial<Rule>>(emptyRule)
+  const [editing, setEditing] = useState<RuleFormState>(emptyForm)
   const [isNew, setIsNew] = useState(false)
 
   useEffect(() => {
@@ -46,26 +135,33 @@ export default function RulesPage() {
   // 选中规则
   function handleSelect(rule: Rule) {
     setSelected(rule)
-    setEditing(rule)
+    setEditing(ruleToForm(rule))
     setIsNew(false)
   }
 
   // 新增规则
   function handleNew() {
     setSelected(null)
-    setEditing({ ...emptyRule })
+    setEditing({ ...emptyForm })
     setIsNew(true)
   }
 
   // 保存规则
   async function handleSave() {
+    const ruleData: Partial<Rule> = {
+      name: editing.name,
+      enabled: editing.enabled,
+      priority: editing.priority,
+      match: formToRuleMatch(editing),
+      action: formToRuleAction(editing),
+    }
     if (isNew) {
-      const created = await createRule(editing)
+      const created = await createRule(ruleData)
       setRules([...rules, created])
       setSelected(created)
       setIsNew(false)
     } else if (selected) {
-      const updated = await updateRule(selected.id, editing)
+      const updated = await updateRule(selected.id, ruleData)
       setRules(rules.map((r) => (r.id === selected.id ? updated : r)))
       setSelected(updated)
     }
@@ -77,7 +173,7 @@ export default function RulesPage() {
     await deleteRule(selected.id)
     setRules(rules.filter((r) => r.id !== selected.id))
     setSelected(null)
-    setEditing(emptyRule)
+    setEditing(emptyForm)
     setIsNew(false)
   }
 
@@ -123,12 +219,10 @@ export default function RulesPage() {
             >
               {/* 类型图标 */}
               <span className="text-sm">
-                {rule.actionType === 'block' && '🚫'}
-                {rule.actionType === 'redirect' && '↩️'}
-                {rule.actionType === 'mock' && '📄'}
-                {rule.actionType === 'delay' && '⏱️'}
-                {rule.actionType === 'modify_request' && '✏️'}
-                {rule.actionType === 'modify_response' && '✏️'}
+                {rule.action?.type === 'block' && '🚫'}
+                {rule.action?.type === 'redirect' && '↩️'}
+                {rule.action?.type === 'delay' && '⏱️'}
+                {rule.action?.type === 'modify' && '✏️'}
               </span>
 
               {/* 名称和优先级 */}
@@ -194,7 +288,7 @@ export default function RulesPage() {
             <div className="flex gap-2">
               <select
                 value={editing.matchType || 'host'}
-                onChange={(e) => setEditing({ ...editing, matchType: e.target.value as Rule['matchType'] })}
+                onChange={(e) => setEditing({ ...editing, matchType: e.target.value })}
                 className="px-3 py-2 bg-[#1a1b26] border border-[#3b4261] rounded text-sm focus:border-[#7aa2f7] focus:outline-none"
               >
                 {matchTypes.map((t) => (
@@ -215,7 +309,7 @@ export default function RulesPage() {
             <h3 className="text-sm font-medium text-[#7aa2f7]">动作配置</h3>
             <select
               value={editing.actionType || 'block'}
-              onChange={(e) => setEditing({ ...editing, actionType: e.target.value as Rule['actionType'] })}
+              onChange={(e) => setEditing({ ...editing, actionType: e.target.value })}
               className="w-full px-3 py-2 bg-[#1a1b26] border border-[#3b4261] rounded text-sm focus:border-[#7aa2f7] focus:outline-none"
             >
               {actionTypes.map((t) => (
@@ -228,8 +322,9 @@ export default function RulesPage() {
               className="w-full px-3 py-2 bg-[#1a1b26] border border-[#3b4261] rounded text-sm h-32 resize-none focus:border-[#7aa2f7] focus:outline-none"
               placeholder={
                 editing.actionType === 'redirect' ? '重定向 URL' :
-                editing.actionType === 'mock' ? 'Mock 响应内容 (JSON)' :
+                editing.actionType === 'block' ? '拦截响应内容 (JSON)' :
                 editing.actionType === 'delay' ? '延迟时间 (ms)' :
+                editing.actionType === 'modify' ? '修改内容 (JSON)' :
                 '动作参数'
               }
             />

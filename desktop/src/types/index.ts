@@ -1,52 +1,54 @@
-// 流量记录
+// 流量记录（对应 Proto TrafficEntry）
 export interface Transaction {
   id: string
+  timestamp: string
+  duration_ms: number
   method: string
+  url: string
   host: string
   path: string
-  url: string
-  status: number
-  statusCode: number
-  contentType: string
-  size: number
-  duration: number
-  requestTime: string
-  source: string
-  bookmarked: boolean
-  notes: string
-  color: string
-  tags: string[]
+  scheme: string
+  port: number
   request: RequestData
   response: ResponseData
+  client_addr: string
+  server_ip: string
+  bookmarked: boolean
+  color: string
+  notes: string
+  tags: string[]
 }
 
-// 请求数据
+// 请求数据（对应 Proto RequestData）
 export interface RequestData {
-  method: string
-  url: string
-  headers: Record<string, string>
+  headers: Record<string, { values: string[] }>
   body: string
-  contentType: string
-  size: number
+  body_size: number
+  content_type: string
 }
 
-// 响应数据
+// 响应数据（对应 Proto ResponseData）
 export interface ResponseData {
-  status: number
-  statusText: string
-  headers: Record<string, string>
+  status_code: number
+  status_text: string
+  headers: Record<string, { values: string[] }>
   body: string
-  contentType: string
-  size: number
+  body_size: number
+  content_type: string
 }
 
-// 流量统计
+// 流量统计（对应 Proto TrafficStats）
 export interface TrafficStats {
-  totalRequests: number
-  successRequests: number
-  failedRequests: number
-  totalSize: number
-  avgDuration: number
+  total_requests: number
+  total_responses: number
+  avg_duration_ms: number
+  max_duration_ms: number
+  min_duration_ms: number
+  error_count: number
+  success_count: number
+  host_stats: Array<{ host: string; count: number; avg_time_ms: number }>
+  method_stats: Array<{ method: string; count: number }>
+  status_stats: Array<{ status_code: number; count: number }>
 }
 
 // WebSocket 消息
@@ -56,44 +58,122 @@ export interface WsMessage {
   time: string
 }
 
-// 规则
+// 规则匹配条件 (与 rules.proto RuleMatch 对应)
+export interface RuleMatch {
+  url_pattern?: string       // URL 正则匹配
+  url_wildcard?: string      // URL 通配符匹配
+  host_pattern?: string      // 主机名匹配
+  methods?: string[]        // HTTP 方法过滤
+  header_match?: {
+    name: string
+    value: string
+    match_type: string       // exact / regex / contains
+  }
+  content_type?: string[]    // Content-Type 过滤
+}
+
+// 拦截响应规范 (与 rules.proto BlockSpec 对应)
+export interface BlockSpec {
+  status_code?: number
+  headers?: Record<string, string>
+  body?: string
+}
+
+// 修改规范 (与 rules.proto ModifySpec 对应)
+export interface ModifySpec {
+  add_headers?: Record<string, string>
+  remove_headers?: string[]
+  set_headers?: Record<string, string>
+  add_query?: Record<string, string>
+  remove_query?: string[]
+  set_query?: Record<string, string>
+  body_replace?: string
+}
+
+// 规则动作 (与 rules.proto RuleAction 对应)
+export interface RuleAction {
+  type: 'block' | 'redirect' | 'modify' | 'delay'
+  local_path?: string       // 本地文件路径 (redirect)
+  remote_url?: string       // 远程 URL (redirect)
+  modify?: ModifySpec       // 修改规范
+  block_response?: BlockSpec // 拦截响应规范
+  delay_ms?: number         // 延迟毫秒数
+}
+
+// 规则 (与 rules.proto Rule 对应)
 export interface Rule {
   id: string
   name: string
   enabled: boolean
   priority: number
-  matchType: 'host' | 'path' | 'method' | 'header' | 'body' | 'url'
-  matchValue: string
-  actionType: 'block' | 'redirect' | 'modify_request' | 'modify_response' | 'delay' | 'mock'
-  actionValue: string
-  hitCount: number
-  createdAt: string
-  updatedAt: string
+  match: RuleMatch
+  action: RuleAction
+  created_at: string
+  updated_at: string
 }
 
-// 断点
+// 规则统计 (与 rules.proto RuleStats 对应)
+export interface RuleStats {
+  total_rules: number
+  enabled_rules: number
+  disabled_rules: number
+  hit_counts: Record<string, number>
+}
+
+// 断点动作类型
+export type BreakActionType = 'pause' | 'auto_modify' | 'drop'
+
+// 断点动作
+export interface BreakAction {
+  type: BreakActionType
+  modifications?: ModifySpec
+}
+
+// 流量记录 (用于断点会话)
+export interface TrafficEntry {
+  id: string
+  method: string
+  host: string
+  path: string
+  url: string
+  statusCode: number
+  requestHeaders: Record<string, string>
+  requestBody: string
+  responseHeaders: Record<string, string>
+  responseBody: string
+  requestTime: string
+  responseTime?: string
+  duration?: number
+  source?: string
+}
+
+// 断点 (与 breakpoints.proto Breakpoint 对应)
 export interface Breakpoint {
   id: string
   name: string
   enabled: boolean
   phase: 'request' | 'response'
-  matchType: 'host' | 'path' | 'url'
-  matchValue: string
+  match: RuleMatch
+  action: BreakAction
   hitCount: number
   createdAt: string
   updatedAt: string
 }
 
-// 断点会话
+// 断点会话状态
+export type SessionStatus = 'waiting' | 'resolved' | 'dropped' | 'timeout'
+
+// 断点会话 (与 breakpoints.proto BreakpointSession 对应)
 export interface BreakpointSession {
   id: string
   breakpointId: string
-  transactionId: string
+  transactionId: number
   phase: 'request' | 'response'
-  status: 'paused' | 'resumed' | 'modified'
-  originalData: RequestData | ResponseData
-  modifiedData?: RequestData | ResponseData
+  status: SessionStatus
+  original?: TrafficEntry
+  modified?: TrafficEntry
   createdAt: string
+  resolvedAt?: string
 }
 
 // AI 聊天消息

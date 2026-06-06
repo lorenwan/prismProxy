@@ -51,9 +51,9 @@ type JSONDiffEntry struct {
 
 // DiffSummary 对比摘要
 type DiffSummary struct {
-	TotalFields  int `json:"total_fields"`
-	Added        int `json:"added"`
-	Removed      int `json:"removed"`
-	Modified     int `json:"modified"`
-	Unchanged    int `json:"unchanged"`
+	TotalFields int `json:"total_fields"`
+	Added       int `json:"added"`
+	Removed     int `json:"removed"`
+	Modified    int `json:"modified"`
+	Unchanged   int `json:"unchanged"`
 }

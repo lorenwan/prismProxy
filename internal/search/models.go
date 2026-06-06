@@ -58,15 +58,15 @@ type SearchResult struct {
 type FilterField string
 
 const (
-	FieldMethod     FilterField = "method"
-	FieldHost       FilterField = "host"
-	FieldPath       FilterField = "path"
-	FieldStatusCode FilterField = "status_code"
-	FieldDuration   FilterField = "duration"
+	FieldMethod      FilterField = "method"
+	FieldHost        FilterField = "host"
+	FieldPath        FilterField = "path"
+	FieldStatusCode  FilterField = "status_code"
+	FieldDuration    FilterField = "duration"
 	FieldContentType FilterField = "content_type"
-	FieldTimestamp  FilterField = "timestamp"
-	FieldBookmarked FilterField = "bookmarked"
-	FieldTags       FilterField = "tags"
+	FieldTimestamp   FilterField = "timestamp"
+	FieldBookmarked  FilterField = "bookmarked"
+	FieldTags        FilterField = "tags"
 )
 
 // BuildWhereClause 构建 WHERE 子句

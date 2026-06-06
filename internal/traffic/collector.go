@@ -8,12 +8,13 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
+	"strconv"
 	"time"
 )
 
 // Collector 流量收集器
 type Collector struct {
-	manager    *Manager
+	manager     *Manager
 	maxBodySize int64
 }
 
@@ -53,7 +54,7 @@ func (c *Collector) CollectRequest(r *http.Request) (*Transaction, error) {
 		Host:       r.Host,
 		Path:       r.URL.Path,
 		Scheme:     scheme,
-		Port:       r.URL.Port(),
+		Port:       parsePort(r.URL.Port()),
 		ClientAddr: r.RemoteAddr,
 		Request: &RequestData{
 			Headers:     r.Header,
@@ -117,6 +118,18 @@ func resolveIP(host string) string {
 		return ""
 	}
 	return addrs[0].String()
+}
+
+// parsePort 将端口字符串解析为 int32
+func parsePort(s string) int32 {
+	if s == "" {
+		return 0
+	}
+	port, err := strconv.Atoi(s)
+	if err != nil {
+		return 0
+	}
+	return int32(port)
 }
 
 // MarshalTransaction 序列化事务为 JSON

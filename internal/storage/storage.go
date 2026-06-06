@@ -10,21 +10,21 @@ import (
 
 // TrafficData 抓包数据结构
 type TrafficData struct {
-	ID           int64  `json:"id"`
-	Method       string `json:"method"`
-	URL          string `json:"url"`
-	Host         string `json:"host"`
-	ServerIP     string `json:"server_ip"`
-	ContentType  string `json:"content_type"`
-	StatusCode   int    `json:"status_code"`
-	DurationMs   int64  `json:"duration_ms"`
-	ReqHeaders   string `json:"req_headers"`
-	ReqBody      []byte `json:"req_body"`
-	RespHeaders  string `json:"resp_headers"`
-	RespBody     []byte `json:"resp_body"`
-	RawReq       []byte `json:"raw_req"`
-	RawResp      []byte `json:"raw_resp"`
-	Timestamp    string `json:"timestamp"`
+	ID          int64  `json:"id"`
+	Method      string `json:"method"`
+	URL         string `json:"url"`
+	Host        string `json:"host"`
+	ServerIP    string `json:"server_ip"`
+	ContentType string `json:"content_type"`
+	StatusCode  int    `json:"status_code"`
+	DurationMs  int64  `json:"duration_ms"`
+	ReqHeaders  string `json:"req_headers"`
+	ReqBody     []byte `json:"req_body"`
+	RespHeaders string `json:"resp_headers"`
+	RespBody    []byte `json:"resp_body"`
+	RawReq      []byte `json:"raw_req"`
+	RawResp     []byte `json:"raw_resp"`
+	Timestamp   string `json:"timestamp"`
 }
 
 // Storage SQLite 存储层

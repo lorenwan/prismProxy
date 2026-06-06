@@ -2,7 +2,7 @@
 
 use prismproxy_desktop::*;
 use state::AppState;
-use tauri::Manager;
+use tauri::{Emitter, Listener, Manager};
 
 fn main() {
     tauri::Builder::default()
@@ -26,12 +26,12 @@ fn main() {
                 });
             }
 
-            // 初始化 gRPC 客户端（带重试机制）
+            // 初始化 gRPC 客户端（带重试机制，20次 * 1.5秒 = 30秒窗口）
             {
                 let state_clone = state.clone();
                 tauri::async_runtime::spawn(async move {
-                    let max_retries = 5;
-                    let retry_interval = std::time::Duration::from_secs(1);
+                    let max_retries = 20;
+                    let retry_interval = std::time::Duration::from_millis(1500);
 
                     for attempt in 1..=max_retries {
                         tokio::time::sleep(retry_interval).await;
@@ -39,6 +39,9 @@ fn main() {
                         match state_clone.init_grpc_client("http://localhost:9090").await {
                             Ok(()) => {
                                 eprintln!("[Tauri] gRPC client connected successfully");
+                                // 连接成功，重置 sidecar 重启计数
+                                let mut sidecar = state_clone.sidecar_manager.lock().await;
+                                sidecar.reset_restart_count();
                                 return;
                             }
                             Err(e) => {
@@ -50,17 +53,45 @@ fn main() {
                 });
             }
 
+            // 监听 sidecar 健康检查失败事件，尝试自动重启
+            {
+                let state_clone = state.clone();
+                let app_clone = app_handle.clone();
+                app_handle.listen("sidecar:health_check_failed", move |_event| {
+                    let state = state_clone.clone();
+                    let app = app_clone.clone();
+                    tauri::async_runtime::spawn(async move {
+                        eprintln!("[Tauri] Health check failed, attempting sidecar restart...");
+                        let mut sidecar = state.sidecar_manager.lock().await;
+                        match sidecar.restart().await {
+                            Ok(()) => {
+                                eprintln!("[Tauri] Sidecar restarted successfully");
+                                // 重启后重新初始化 gRPC 客户端
+                                drop(sidecar); // 释放锁
+                                if let Err(e) = state.init_grpc_client("http://localhost:9090").await {
+                                    eprintln!("[Tauri] Failed to reinit gRPC client after restart: {}", e);
+                                }
+                            }
+                            Err(e) => {
+                                eprintln!("[Tauri] Sidecar restart failed: {}", e);
+                                let _ = app.emit("sidecar:restart_failed", e);
+                            }
+                        }
+                    });
+                });
+            }
+
             Ok(())
         })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
                 if let Some(state) = window.try_state::<AppState>() {
-                    let state = (*state).clone();
-                    tauri::async_runtime::spawn(async move {
-                        let mut sidecar = state.sidecar_manager.lock().await;
-                        sidecar.stop().await;
+                    let sidecar_mgr = state.sidecar_manager.clone();
+                    let lock_result = sidecar_mgr.try_lock();
+                    if let Ok(mut sidecar) = lock_result {
+                        sidecar.stop_sync();
                         println!("[Tauri] PrismProxy sidecar stopped");
-                    });
+                    }
                 }
             }
         })
@@ -81,12 +112,18 @@ fn main() {
             commands::traffic::clear_traffic,
             commands::traffic::subscribe_traffic,
             commands::traffic::get_traffic_stats,
+            commands::traffic::update_traffic_bookmark,
+            commands::traffic::update_traffic_notes,
+            commands::traffic::update_traffic_color,
+            commands::traffic::update_traffic_tags,
             // Rules
             commands::rules::list_rules,
             commands::rules::get_rule,
             commands::rules::create_rule,
             commands::rules::update_rule,
             commands::rules::delete_rule,
+            commands::rules::toggle_rule,
+            commands::rules::get_rule_stats,
             // AI
             commands::ai::chat,
             commands::ai::stream_chat,

@@ -19,7 +19,7 @@ type Transaction struct {
 	Host   string `json:"host"`
 	Path   string `json:"path"`
 	Scheme string `json:"scheme"`
-	Port   string `json:"port"`
+	Port   int32  `json:"port"`
 
 	// 请求数据
 	Request *RequestData `json:"request"`
@@ -49,13 +49,13 @@ type RequestData struct {
 
 // ResponseData 响应数据
 type ResponseData struct {
-	StatusCode  int            `json:"status_code"`
-	StatusText  string         `json:"status_text"`
-	Headers     http.Header    `json:"headers"`
-	Body        []byte         `json:"body"`
-	BodySize    int64          `json:"body_size"`
-	ContentType string         `json:"content_type"`
-	Raw         []byte         `json:"raw"`
+	StatusCode  int         `json:"status_code"`
+	StatusText  string      `json:"status_text"`
+	Headers     http.Header `json:"headers"`
+	Body        []byte      `json:"body"`
+	BodySize    int64       `json:"body_size"`
+	ContentType string      `json:"content_type"`
+	Raw         []byte      `json:"raw"`
 }
 
 // Filter 流量过滤器
@@ -158,23 +158,23 @@ func (f *Filter) BuildSQL() (string, []interface{}) {
 
 // TrafficStats 流量统计
 type TrafficStats struct {
-	TotalRequests  int64   `json:"total_requests"`
-	TotalResponses int64   `json:"total_responses"`
-	AvgDuration    float64 `json:"avg_duration_ms"`
-	MaxDuration    int64   `json:"max_duration_ms"`
-	MinDuration    int64   `json:"min_duration_ms"`
-	ErrorCount     int64   `json:"error_count"`
-	SuccessCount   int64   `json:"success_count"`
-	HostStats      []HostStat `json:"host_stats"`
+	TotalRequests  int64        `json:"total_requests"`
+	TotalResponses int64        `json:"total_responses"`
+	AvgDuration    float64      `json:"avg_duration_ms"`
+	MaxDuration    int64        `json:"max_duration_ms"`
+	MinDuration    int64        `json:"min_duration_ms"`
+	ErrorCount     int64        `json:"error_count"`
+	SuccessCount   int64        `json:"success_count"`
+	HostStats      []HostStat   `json:"host_stats"`
 	MethodStats    []MethodStat `json:"method_stats"`
 	StatusStats    []StatusStat `json:"status_stats"`
 }
 
 // HostStat 主机统计
 type HostStat struct {
-	Host     string `json:"host"`
-	Count    int64  `json:"count"`
-	AvgTime  float64 `json:"avg_time_ms"`
+	Host    string  `json:"host"`
+	Count   int64   `json:"count"`
+	AvgTime float64 `json:"avg_time_ms"`
 }
 
 // MethodStat 方法统计

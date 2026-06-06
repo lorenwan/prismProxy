@@ -8,6 +8,7 @@ use crate::grpc_client::SavedFilter;
 use crate::grpc_client::SearchByHostRequest;
 use crate::grpc_client::SearchByMethodRequest;
 use crate::grpc_client::SearchByStatusCodeRequest;
+use crate::grpc_client::SearchFilter;
 use crate::grpc_client::SearchRequest;
 use crate::grpc_client::SearchSlowRequestsRequest;
 use crate::state::AppState;
@@ -20,13 +21,29 @@ pub async fn search(
     sort: Option<String>,
     page: Option<i32>,
     page_size: Option<i32>,
+    filters: Option<Vec<serde_json::Value>>,
 ) -> AppResult<String> {
+    let search_filters: Vec<SearchFilter> = filters
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|f| {
+            let field = f.get("field")?.as_str()?.to_string();
+            let operator = f.get("operator")?.as_i64().unwrap_or(0) as i32;
+            let value = f.get("value")?.as_str()?.to_string();
+            Some(SearchFilter {
+                field,
+                operator,
+                value,
+            })
+        })
+        .collect();
+
     let mut client = state.get_grpc_client().await?;
     let response = client
         .search
         .search(SearchRequest {
             query,
-            filters: vec![],
+            filters: search_filters,
             sort: sort.unwrap_or_default(),
             pagination: Some(Pagination {
                 page: page.unwrap_or(1),
@@ -168,7 +185,7 @@ pub async fn save_filter(
 ) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
     let request: SavedFilter = serde_json::from_str(&filter)
-        .map_err(|e| crate::error::AppError::Connection(format!("JSON 解析失败: {}", e)))?;
+        .map_err(|e| crate::error::AppError::Serialize(format!("JSON 解析失败: {}", e)))?;
     let response = client
         .search
         .save_filter(request)

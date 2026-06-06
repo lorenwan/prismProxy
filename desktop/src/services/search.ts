@@ -17,10 +17,11 @@ export interface SearchQuery {
 }
 
 export interface SearchResult {
-  transactions: Transaction[]
+  items: Transaction[]
   total: number
-  highlights: Record<string, string[]>
-  took: number
+  page: number
+  page_size: number
+  total_pages: number
 }
 
 export interface SearchSuggestion {
@@ -31,11 +32,23 @@ export interface SearchSuggestion {
 
 // 全文搜索
 export async function search(query: SearchQuery): Promise<SearchResult> {
+  const filters: Array<{ field: string; operator: number; value: string }> = []
+  if (query.scope) filters.push({ field: 'scope', operator: 1, value: query.scope })
+  if (query.method) filters.push({ field: 'method', operator: 1, value: query.method })
+  if (query.status) filters.push({ field: 'status', operator: 1, value: String(query.status) })
+  if (query.host) filters.push({ field: 'host', operator: 1, value: query.host })
+  if (query.contentType) filters.push({ field: 'contentType', operator: 1, value: query.contentType })
+  if (query.startTime) filters.push({ field: 'startTime', operator: 3, value: query.startTime })
+  if (query.endTime) filters.push({ field: 'endTime', operator: 4, value: query.endTime })
+  if (query.minSize !== undefined) filters.push({ field: 'minSize', operator: 3, value: String(query.minSize) })
+  if (query.maxSize !== undefined) filters.push({ field: 'maxSize', operator: 4, value: String(query.maxSize) })
+
   const result = await invoke<string>('search', {
     query: query.keyword,
     sort: '',
     page: query.page,
     pageSize: query.pageSize,
+    filters,
   })
   return JSON.parse(result)
 }
@@ -77,7 +90,7 @@ export async function getRecentSearches(): Promise<string[]> {
 // 保存搜索（映射为保存过滤器）
 export async function saveSearch(name: string, query: SearchQuery): Promise<{ id: string; name: string }> {
   const result = await invoke<string>('save_filter', {
-    filter: JSON.stringify({ name, query: JSON.stringify(query) }),
+    filter: JSON.stringify({ name, query: query.keyword }),
   })
   return JSON.parse(result)
 }

@@ -20,68 +20,103 @@ export interface PerfConfig {
   duration?: number
 }
 
+// 对应 Proto PerfStats 消息
 export interface PerfResults {
   totalRequests: number
-  successfulRequests: number
-  failedRequests: number
-  totalDuration: number
-  avgResponseTime: number
-  minResponseTime: number
-  maxResponseTime: number
-  p50ResponseTime: number
-  p90ResponseTime: number
-  p95ResponseTime: number
-  p99ResponseTime: number
-  requestsPerSecond: number
+  avgDurationMs: number
+  p50Ms: number
+  p90Ms: number
+  p99Ms: number
+  slowRequests: number
+  minDurationMs: number
+  maxDurationMs: number
+  totalDurationMs: number
+}
+
+// 对应 Proto SlowRequest 消息
+export interface SlowRequest {
+  transactionId: number
+  url: string
+  method: string
+  host: string
+  statusCode: number
+  durationMs: number
+  timestamp: string
+}
+
+// 对应 Proto DomainStats 消息
+export interface DomainStat {
+  domain: string
+  requestCount: number
+  avgDurationMs: number
+  errorCount: number
   errorRate: number
-  throughput: number
-  statusCodes: Record<number, number>
-  timeline: Array<{
-    timestamp: number
-    rps: number
-    avgLatency: number
-    errorRate: number
-  }>
+  totalDurationMs: number
+}
+
+// 对应 Proto TimelinePoint 消息
+export interface TimelinePoint {
+  timestamp: string
+  requestCount: number
+  avgDurationMs: number
+  errorCount: number
+}
+
+// 对应 Proto StatusCodeStats 消息
+export interface StatusCodeStat {
+  statusCode: number
+  count: number
+}
+
+// 对应 Proto MethodStats 消息
+export interface MethodStat {
+  method: string
+  count: number
 }
 
 // 获取性能统计
-export async function getPerfStats(since?: string): Promise<any> {
+export async function getPerfStats(since?: string): Promise<PerfResults> {
   const result = await invoke<string>('get_perf_stats', { since })
   return JSON.parse(result)
 }
 
 // 获取慢请求列表
-export async function getSlowRequests(thresholdMs?: number, limit?: number): Promise<any> {
+export async function getSlowRequests(thresholdMs?: number, limit?: number): Promise<SlowRequest[]> {
   const result = await invoke<string>('get_slow_requests', { thresholdMs, limit })
-  return JSON.parse(result)
+  const parsed = JSON.parse(result)
+  return parsed?.requests ?? []
 }
 
 // 获取域名统计
-export async function getDomainStats(): Promise<any> {
+export async function getDomainStats(): Promise<DomainStat[]> {
   const result = await invoke<string>('get_domain_stats')
-  return JSON.parse(result)
+  const parsed = JSON.parse(result)
+  return parsed?.stats ?? []
 }
 
 // 获取时间线数据
-export async function getPerfTimeline(since?: string, intervalSeconds?: number): Promise<any> {
+export async function getPerfTimeline(since?: string, intervalSeconds?: number): Promise<TimelinePoint[]> {
   const result = await invoke<string>('get_perf_timeline', { since, intervalSeconds })
-  return JSON.parse(result)
+  const parsed = JSON.parse(result)
+  return parsed?.points ?? []
 }
 
 // 获取状态码统计
-export async function getStatusCodeStats(since?: string): Promise<any> {
+export async function getStatusCodeStats(since?: string): Promise<StatusCodeStat[]> {
   const result = await invoke<string>('get_status_code_stats', { since })
-  return JSON.parse(result)
+  const parsed = JSON.parse(result)
+  return parsed?.stats ?? []
 }
 
 // 获取请求方法统计
-export async function getMethodStats(since?: string): Promise<any> {
+export async function getMethodStats(since?: string): Promise<MethodStat[]> {
   const result = await invoke<string>('get_method_stats', { since })
-  return JSON.parse(result)
+  const parsed = JSON.parse(result)
+  return parsed?.stats ?? []
 }
 
 // 获取最近 N 分钟统计
-export async function getRecentStats(minutes: number): Promise<any> {
+export async function getRecentStats(minutes: number): Promise<PerfResults> {
   const result = await invoke<string>('get_recent_stats', { minutes })
   return JSON.parse(result)
 }

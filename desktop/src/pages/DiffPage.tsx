@@ -94,13 +94,13 @@ export default function DiffPage() {
       const l = leftLines[i]
       const r = rightLines[i]
       if (l === undefined) {
-        sections.push({ type: 'added', path: `line ${i + 1}`, rightValue: r })
+        sections.push({ type: 'added', path: `line ${i + 1}`, right: r })
       } else if (r === undefined) {
-        sections.push({ type: 'removed', path: `line ${i + 1}`, leftValue: l })
+        sections.push({ type: 'removed', path: `line ${i + 1}`, left: l })
       } else if (l !== r) {
-        sections.push({ type: 'modified', path: `line ${i + 1}`, leftValue: l, rightValue: r })
+        sections.push({ type: 'modified', path: `line ${i + 1}`, left: l, right: r })
       } else {
-        sections.push({ type: 'equal', path: `line ${i + 1}`, leftValue: l })
+        sections.push({ type: 'equal', path: `line ${i + 1}`, left: l })
       }
     }
     return sections
@@ -192,13 +192,13 @@ export default function DiffPage() {
               <span className="w-4 text-xs font-mono shrink-0">{getDiffLabel(section.type)}</span>
               <span className="w-20 text-xs text-[#565f89] shrink-0">{section.path}</span>
               <div className="flex-1 min-w-0">
-                {section.leftValue !== undefined && (
+                {section.left !== undefined && (
                   <div className={`text-xs font-mono ${section.type === 'removed' || section.type === 'modified' ? 'line-through opacity-60' : ''}`}>
-                    {section.leftValue}
+                    {section.left}
                   </div>
                 )}
-                {section.rightValue !== undefined && section.type !== 'equal' && (
-                  <div className="text-xs font-mono">{section.rightValue}</div>
+                {section.right !== undefined && section.type !== 'equal' && (
+                  <div className="text-xs font-mono">{section.right}</div>
                 )}
               </div>
             </div>

@@ -44,7 +44,7 @@ pub async fn create_script(
 ) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
     let request: Script = serde_json::from_str(&script)
-        .map_err(|e| crate::error::AppError::Connection(format!("JSON 解析失败: {}", e)))?;
+        .map_err(|e| crate::error::AppError::Serialize(format!("JSON 解析失败: {}", e)))?;
     let response = client
         .scripts
         .create(request)
@@ -61,7 +61,7 @@ pub async fn update_script(
 ) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
     let request: Script = serde_json::from_str(&script)
-        .map_err(|e| crate::error::AppError::Connection(format!("JSON 解析失败: {}", e)))?;
+        .map_err(|e| crate::error::AppError::Serialize(format!("JSON 解析失败: {}", e)))?;
     let response = client
         .scripts
         .update(request)

@@ -46,7 +46,7 @@ pub async fn create_collection(
 ) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
     let request: Collection = serde_json::from_str(&collection)
-        .map_err(|e| crate::error::AppError::Connection(format!("JSON 解析失败: {}", e)))?;
+        .map_err(|e| crate::error::AppError::Serialize(format!("JSON 解析失败: {}", e)))?;
     let response = client
         .collections
         .create(request)
@@ -63,7 +63,7 @@ pub async fn update_collection(
 ) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
     let request: Collection = serde_json::from_str(&collection)
-        .map_err(|e| crate::error::AppError::Connection(format!("JSON 解析失败: {}", e)))?;
+        .map_err(|e| crate::error::AppError::Serialize(format!("JSON 解析失败: {}", e)))?;
     let response = client
         .collections
         .update(request)
@@ -97,7 +97,7 @@ pub async fn add_collection_request(
 ) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
     let api_request: crate::grpc_client::ApiRequest = serde_json::from_str(&request)
-        .map_err(|e| crate::error::AppError::Connection(format!("JSON 解析失败: {}", e)))?;
+        .map_err(|e| crate::error::AppError::Serialize(format!("JSON 解析失败: {}", e)))?;
     let response = client
         .collections
         .add_request(AddRequestRequest {
@@ -120,7 +120,7 @@ pub async fn update_collection_request(
 ) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
     let api_request: crate::grpc_client::ApiRequest = serde_json::from_str(&request)
-        .map_err(|e| crate::error::AppError::Connection(format!("JSON 解析失败: {}", e)))?;
+        .map_err(|e| crate::error::AppError::Serialize(format!("JSON 解析失败: {}", e)))?;
     let response = client
         .collections
         .update_request(UpdateRequestRequest {
@@ -161,7 +161,7 @@ pub async fn execute_collection_request(
 ) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
     let api_request: crate::grpc_client::ApiRequest = serde_json::from_str(&request)
-        .map_err(|e| crate::error::AppError::Connection(format!("JSON 解析失败: {}", e)))?;
+        .map_err(|e| crate::error::AppError::Serialize(format!("JSON 解析失败: {}", e)))?;
     let response = client
         .collections
         .execute_request(ExecuteRequestRequest {

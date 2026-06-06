@@ -43,7 +43,7 @@ pub async fn create_rewrite(
 ) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
     let request: RewriteRule = serde_json::from_str(&rewrite)
-        .map_err(|e| crate::error::AppError::Connection(format!("JSON 解析失败: {}", e)))?;
+        .map_err(|e| crate::error::AppError::Serialize(format!("JSON 解析失败: {}", e)))?;
     let response = client
         .rewrites
         .create(request)
@@ -60,7 +60,7 @@ pub async fn update_rewrite(
 ) -> AppResult<String> {
     let mut client = state.get_grpc_client().await?;
     let request: RewriteRule = serde_json::from_str(&rewrite)
-        .map_err(|e| crate::error::AppError::Connection(format!("JSON 解析失败: {}", e)))?;
+        .map_err(|e| crate::error::AppError::Serialize(format!("JSON 解析失败: {}", e)))?;
     let response = client
         .rewrites
         .update(request)

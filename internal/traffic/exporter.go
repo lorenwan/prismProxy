@@ -113,9 +113,9 @@ type HAR struct {
 }
 
 type HARLog struct {
-	Version string      `json:"version"`
-	Creator HARCreator  `json:"creator"`
-	Entries []HAREntry  `json:"entries"`
+	Version string     `json:"version"`
+	Creator HARCreator `json:"creator"`
+	Entries []HAREntry `json:"entries"`
 }
 
 type HARCreator struct {
@@ -131,12 +131,12 @@ type HAREntry struct {
 }
 
 type HARRequest struct {
-	Method      string           `json:"method"`
-	URL         string           `json:"url"`
-	HTTPVersion string           `json:"httpVersion"`
-	Headers     []HARHeader      `json:"headers"`
-	HeadersSize int64            `json:"headersSize"`
-	BodySize    int64            `json:"bodySize"`
+	Method      string      `json:"method"`
+	URL         string      `json:"url"`
+	HTTPVersion string      `json:"httpVersion"`
+	Headers     []HARHeader `json:"headers"`
+	HeadersSize int64       `json:"headersSize"`
+	BodySize    int64       `json:"bodySize"`
 }
 
 type HARResponse struct {
