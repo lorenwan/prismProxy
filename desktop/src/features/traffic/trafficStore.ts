@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Transaction } from '../types'
+import type { Transaction } from '../../types'
 
 interface TrafficState {
   // 流量列表

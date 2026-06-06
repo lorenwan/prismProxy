@@ -139,10 +139,10 @@ export default function BreakpointsPage() {
   return (
     <div className="flex h-full">
       {/* 左侧断点列表 */}
-      <div className="w-80 border-r border-[#3b4261] flex flex-col bg-[#1a1b26]">
+      <div className="w-80 border-r border-[var(--border)] flex flex-col bg-[var(--bg-inset)]">
         {/* 工具栏 */}
-        <div className="flex items-center gap-1 p-2 border-b border-[#3b4261]">
-          <button onClick={handleNew} className="px-2 py-1 text-xs bg-[#7aa2f7] text-[#1a1b26] rounded hover:bg-[#89b4fa]">
+        <div className="flex items-center gap-1 p-2 border-b border-[var(--border)]">
+          <button onClick={handleNew} className="px-2 py-1 text-xs bg-[var(--blue)] text-white rounded hover:bg-[var(--blue)]/90">
             新增
           </button>
         </div>
@@ -153,8 +153,8 @@ export default function BreakpointsPage() {
             <div
               key={bp.id}
               onClick={() => handleSelect(bp)}
-              className={`flex items-center gap-2 px-3 py-2 cursor-pointer border-b border-[#24283b] ${
-                selected?.id === bp.id ? 'bg-[#283457]' : 'hover:bg-[#24283b]'
+              className={`flex items-center gap-2 px-3 py-2 cursor-pointer border-b border-[var(--border-subtle)] ${
+                selected?.id === bp.id ? 'bg-[var(--selected-bg)]' : 'hover:bg-[var(--hover-bg)]'
               }`}
             >
               {/* 阶段图标 */}
@@ -163,7 +163,7 @@ export default function BreakpointsPage() {
               {/* 信息 */}
               <div className="flex-1 min-w-0">
                 <div className="text-sm truncate">{bp.name || '未命名断点'}</div>
-                <div className="text-xs text-[#565f89]">
+                <div className="text-xs text-[var(--text-tertiary)]">
                   {bp.match?.host_pattern ? `host: ${bp.match.host_pattern}` :
                    bp.match?.url_pattern ? `path: ${bp.match.url_pattern}` :
                    bp.match?.url_wildcard ? `url: ${bp.match.url_wildcard}` :
@@ -178,7 +178,7 @@ export default function BreakpointsPage() {
                   handleToggle(bp)
                 }}
                 className={`w-8 h-4 rounded-full transition-colors ${
-                  bp.enabled ? 'bg-[#9ece6a]' : 'bg-[#3b4261]'
+                  bp.enabled ? 'bg-[var(--green)]' : 'bg-[var(--border)]'
                 }`}
               >
                 <div
@@ -190,7 +190,7 @@ export default function BreakpointsPage() {
             </div>
           ))}
           {breakpoints.length === 0 && (
-            <div className="p-4 text-center text-[#565f89] text-sm">暂无断点</div>
+            <div className="p-4 text-center text-[var(--text-tertiary)] text-sm">暂无断点</div>
           )}
         </div>
       </div>
@@ -198,28 +198,28 @@ export default function BreakpointsPage() {
       {/* 右侧编辑器和会话 */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* 断点编辑器 */}
-        <div className="flex-1 overflow-y-auto bg-[#24283b] p-4">
+        <div className="flex-1 overflow-y-auto bg-[var(--hover-bg)] p-4">
           <div className="max-w-2xl space-y-4">
             <h2 className="text-lg font-semibold">{isNew ? '新增断点' : '编辑断点'}</h2>
 
             {/* 名称 */}
             <div>
-              <label className="block text-sm text-[#565f89] mb-1">断点名称</label>
+              <label className="block text-sm text-[var(--text-tertiary)] mb-1">断点名称</label>
               <input
                 value={editing.name || ''}
                 onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-                className="w-full px-3 py-2 bg-[#1a1b26] border border-[#3b4261] rounded text-sm focus:border-[#7aa2f7] focus:outline-none"
+                className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                 placeholder="输入断点名称"
               />
             </div>
 
             {/* 阶段 */}
             <div>
-              <label className="block text-sm text-[#565f89] mb-1">断点阶段</label>
+              <label className="block text-sm text-[var(--text-tertiary)] mb-1">断点阶段</label>
               <select
                 value={editing.phase || 'request'}
                 onChange={(e) => setEditing({ ...editing, phase: e.target.value as Breakpoint['phase'] })}
-                className="w-full px-3 py-2 bg-[#1a1b26] border border-[#3b4261] rounded text-sm focus:border-[#7aa2f7] focus:outline-none"
+                className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
               >
                 <option value="request">请求阶段</option>
                 <option value="response">响应阶段</option>
@@ -228,12 +228,12 @@ export default function BreakpointsPage() {
 
             {/* 匹配条件 */}
             <div className="space-y-2">
-              <h3 className="text-sm font-medium text-[#7aa2f7]">匹配条件</h3>
+              <h3 className="text-sm font-medium text-[var(--blue)]">匹配条件</h3>
               <div className="flex gap-2">
                 <select
                   value={editing.matchType || 'path'}
                   onChange={(e) => setEditing({ ...editing, matchType: e.target.value })}
-                  className="px-3 py-2 bg-[#1a1b26] border border-[#3b4261] rounded text-sm focus:border-[#7aa2f7] focus:outline-none"
+                  className="px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                 >
                   <option value="host">Host</option>
                   <option value="path">Path</option>
@@ -242,7 +242,7 @@ export default function BreakpointsPage() {
                 <input
                   value={editing.matchValue || ''}
                   onChange={(e) => setEditing({ ...editing, matchValue: e.target.value })}
-                  className="flex-1 px-3 py-2 bg-[#1a1b26] border border-[#3b4261] rounded text-sm focus:border-[#7aa2f7] focus:outline-none"
+                  className="flex-1 px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                   placeholder="匹配值（支持正则）"
                 />
               </div>
@@ -250,11 +250,11 @@ export default function BreakpointsPage() {
 
             {/* 操作按钮 */}
             <div className="flex gap-2 pt-2">
-              <button onClick={handleSave} className="px-4 py-2 bg-[#7aa2f7] text-[#1a1b26] rounded text-sm hover:bg-[#89b4fa]">
+              <button onClick={handleSave} className="px-4 py-2 bg-[var(--blue)] text-white rounded text-sm hover:bg-[var(--blue)]/90">
                 保存
               </button>
               {!isNew && (
-                <button onClick={handleDelete} className="px-4 py-2 bg-[#f7768e] text-[#1a1b26] rounded text-sm hover:bg-[#ff9eaf]">
+                <button onClick={handleDelete} className="px-4 py-2 bg-[var(--red)] text-white rounded text-sm hover:bg-[var(--red)]/90">
                   删除
                 </button>
               )}
@@ -264,21 +264,21 @@ export default function BreakpointsPage() {
 
         {/* 活跃会话面板 */}
         {sessions.length > 0 && (
-          <div className="h-48 border-t border-[#3b4261] bg-[#1a1b26] flex flex-col">
-            <div className="px-3 py-2 border-b border-[#3b4261] text-sm font-medium">
+          <div className="h-48 border-t border-[var(--border)] bg-[var(--bg-inset)] flex flex-col">
+            <div className="px-3 py-2 border-b border-[var(--border)] text-sm font-medium">
               活跃断点会话 ({sessions.length})
             </div>
             <div className="flex-1 overflow-y-auto">
               {sessions.map((s) => (
-                <div key={s.id} className="flex items-center gap-3 px-3 py-2 border-b border-[#24283b]">
+                <div key={s.id} className="flex items-center gap-3 px-3 py-2 border-b border-[var(--border-subtle)]">
                   <span className="text-sm">{s.phase === 'request' ? '📥' : '📤'}</span>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm truncate">会话 {s.id.slice(0, 8)}</div>
-                    <div className="text-xs text-[#565f89]">状态: {s.status}</div>
+                    <div className="text-xs text-[var(--text-tertiary)]">状态: {s.status}</div>
                   </div>
                   <button
                     onClick={() => handleResume(s.id)}
-                    className="px-2 py-1 text-xs bg-[#9ece6a] text-[#1a1b26] rounded hover:bg-[#73daca]"
+                    className="px-2 py-1 text-xs bg-[var(--green)] text-white rounded hover:bg-[#73daca]"
                   >
                     恢复
                   </button>

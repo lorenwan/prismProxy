@@ -141,15 +141,15 @@ export default function ScriptsPage() {
   return (
     <div className="flex h-full">
       {/* 左侧脚本列表 */}
-      <div className="w-72 border-r border-[#3b4261] flex flex-col bg-[#1a1b26]">
-        <div className="flex items-center gap-1 p-2 border-b border-[#3b4261]">
-          <button onClick={handleNew} className="px-2 py-1 text-xs bg-[#7aa2f7] text-[#1a1b26] rounded hover:bg-[#89b4fa]">
+      <div className="w-72 border-r border-[var(--border)] flex flex-col bg-[var(--bg-inset)]">
+        <div className="flex items-center gap-1 p-2 border-b border-[var(--border)]">
+          <button onClick={handleNew} className="px-2 py-1 text-xs bg-[var(--blue)] text-white rounded hover:bg-[var(--blue)]/90">
             新增
           </button>
-          <button onClick={() => handleBatchToggle(true)} className="px-2 py-1 text-xs bg-[#24283b] rounded hover:bg-[#3b4261]">
+          <button onClick={() => handleBatchToggle(true)} className="px-2 py-1 text-xs bg-[var(--hover-bg)] rounded hover:bg-[var(--hover-bg)]">
             全部启用
           </button>
-          <button onClick={() => handleBatchToggle(false)} className="px-2 py-1 text-xs bg-[#24283b] rounded hover:bg-[#3b4261]">
+          <button onClick={() => handleBatchToggle(false)} className="px-2 py-1 text-xs bg-[var(--hover-bg)] rounded hover:bg-[var(--hover-bg)]">
             全部禁用
           </button>
         </div>
@@ -159,8 +159,8 @@ export default function ScriptsPage() {
             <div
               key={script.id}
               onClick={() => handleSelect(script)}
-              className={`flex items-center gap-2 px-3 py-2 cursor-pointer border-b border-[#24283b] ${
-                selected?.id === script.id ? 'bg-[#283457]' : 'hover:bg-[#24283b]'
+              className={`flex items-center gap-2 px-3 py-2 cursor-pointer border-b border-[var(--border-subtle)] ${
+                selected?.id === script.id ? 'bg-[var(--selected-bg)]' : 'hover:bg-[var(--hover-bg)]'
               }`}
             >
               <span className="text-sm">
@@ -170,31 +170,31 @@ export default function ScriptsPage() {
               </span>
               <div className="flex-1 min-w-0">
                 <div className="text-sm truncate">{script.name || '未命名脚本'}</div>
-                <div className="text-xs text-[#565f89]">{triggers.find((t) => t.value === script.trigger)?.label}</div>
+                <div className="text-xs text-[var(--text-tertiary)]">{triggers.find((t) => t.value === script.trigger)?.label}</div>
               </div>
               <button
                 onClick={(e) => { e.stopPropagation(); handleToggle(script) }}
-                className={`w-8 h-4 rounded-full transition-colors ${script.enabled ? 'bg-[#9ece6a]' : 'bg-[#3b4261]'}`}
+                className={`w-8 h-4 rounded-full transition-colors ${script.enabled ? 'bg-[var(--green)]' : 'bg-[var(--border)]'}`}
               >
                 <div className={`w-3 h-3 rounded-full bg-white transition-transform ${script.enabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
               </button>
             </div>
           ))}
           {scripts.length === 0 && (
-            <div className="p-4 text-center text-[#565f89] text-sm">暂无脚本</div>
+            <div className="p-4 text-center text-[var(--text-tertiary)] text-sm">暂无脚本</div>
           )}
         </div>
       </div>
 
       {/* 右侧编辑器 */}
-      <div className="flex-1 flex flex-col bg-[#24283b] overflow-hidden">
+      <div className="flex-1 flex flex-col bg-[var(--hover-bg)] overflow-hidden">
         <div className="flex-1 flex flex-col overflow-y-auto">
           <div className="p-4 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">{isNew ? '新增脚本' : '编辑脚本'}</h2>
               <button
                 onClick={() => setShowTemplates(!showTemplates)}
-                className="px-2 py-1 text-xs bg-[#bb9af7] text-[#1a1b26] rounded hover:bg-[#c9a8fa]"
+                className="px-2 py-1 text-xs bg-[var(--purple)] text-white rounded hover:bg-[var(--purple)]/90"
               >
                 模板库
               </button>
@@ -202,17 +202,17 @@ export default function ScriptsPage() {
 
             {/* 模板库面板 */}
             {showTemplates && (
-              <div className="bg-[#1a1b26] border border-[#3b4261] rounded p-3">
-                <h4 className="text-sm font-medium text-[#bb9af7] mb-2">脚本模板</h4>
+              <div className="bg-[var(--bg-inset)] border border-[var(--border)] rounded p-3">
+                <h4 className="text-sm font-medium text-[var(--purple)] mb-2">脚本模板</h4>
                 <div className="grid grid-cols-2 gap-2">
                   {scriptTemplates.map((tpl, i) => (
                     <button
                       key={i}
                       onClick={() => useTemplate(tpl)}
-                      className="text-left px-3 py-2 bg-[#24283b] rounded hover:bg-[#283457] text-xs"
+                      className="text-left px-3 py-2 bg-[var(--hover-bg)] rounded hover:bg-[var(--selected-bg)] text-xs"
                     >
                       <div className="font-medium">{tpl.name}</div>
-                      <div className="text-[#565f89] mt-0.5">{triggers.find((t) => t.value === tpl.trigger)?.label}</div>
+                      <div className="text-[var(--text-tertiary)] mt-0.5">{triggers.find((t) => t.value === tpl.trigger)?.label}</div>
                     </button>
                   ))}
                 </div>
@@ -221,20 +221,20 @@ export default function ScriptsPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-[#565f89] mb-1">脚本名称</label>
+                <label className="block text-sm text-[var(--text-tertiary)] mb-1">脚本名称</label>
                 <input
                   value={editing.name || ''}
                   onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-[#1a1b26] border border-[#3b4261] rounded text-sm focus:border-[#7aa2f7] focus:outline-none"
+                  className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                   placeholder="输入脚本名称"
                 />
               </div>
               <div>
-                <label className="block text-sm text-[#565f89] mb-1">触发阶段</label>
+                <label className="block text-sm text-[var(--text-tertiary)] mb-1">触发阶段</label>
                 <select
                   value={editing.trigger || 'request'}
                   onChange={(e) => setEditing({ ...editing, trigger: e.target.value as Script['trigger'] })}
-                  className="w-full px-3 py-2 bg-[#1a1b26] border border-[#3b4261] rounded text-sm focus:border-[#7aa2f7] focus:outline-none"
+                  className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                 >
                   {triggers.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
@@ -243,20 +243,20 @@ export default function ScriptsPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-[#565f89] mb-1">优先级</label>
+                <label className="block text-sm text-[var(--text-tertiary)] mb-1">优先级</label>
                 <input
                   type="number"
                   value={editing.priority || 0}
                   onChange={(e) => setEditing({ ...editing, priority: Number(e.target.value) })}
-                  className="w-32 px-3 py-2 bg-[#1a1b26] border border-[#3b4261] rounded text-sm focus:border-[#7aa2f7] focus:outline-none"
+                  className="w-32 px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm text-[#565f89] mb-1">描述</label>
+                <label className="block text-sm text-[var(--text-tertiary)] mb-1">描述</label>
                 <input
                   value={editing.description || ''}
                   onChange={(e) => setEditing({ ...editing, description: e.target.value })}
-                  className="w-full px-3 py-2 bg-[#1a1b26] border border-[#3b4261] rounded text-sm focus:border-[#7aa2f7] focus:outline-none"
+                  className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                   placeholder="脚本描述（可选）"
                 />
               </div>
@@ -265,13 +265,13 @@ export default function ScriptsPage() {
             {/* 代码编辑器 */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-sm text-[#565f89]">脚本代码</label>
-                <span className="text-xs text-[#565f89]">JavaScript</span>
+                <label className="text-sm text-[var(--text-tertiary)]">脚本代码</label>
+                <span className="text-xs text-[var(--text-tertiary)]">JavaScript</span>
               </div>
               <textarea
                 value={editing.code || ''}
                 onChange={(e) => setEditing({ ...editing, code: e.target.value })}
-                className="w-full px-3 py-2 bg-[#1a1b26] border border-[#3b4261] rounded text-sm font-mono h-64 resize-none focus:border-[#7aa2f7] focus:outline-none"
+                className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm font-mono h-64 resize-none focus:border-[var(--blue)] focus:outline-none"
                 placeholder="// 编写脚本代码&#10;// request: 请求对象&#10;// response: 响应对象&#10;// console.log(): 日志输出"
                 spellCheck={false}
               />
@@ -279,7 +279,7 @@ export default function ScriptsPage() {
 
             {/* 操作按钮 */}
             <div className="flex gap-2 pt-2">
-              <button onClick={handleSave} className="px-4 py-2 bg-[#7aa2f7] text-[#1a1b26] rounded text-sm hover:bg-[#89b4fa]">
+              <button onClick={handleSave} className="px-4 py-2 bg-[var(--blue)] text-white rounded text-sm hover:bg-[var(--blue)]/90">
                 保存
               </button>
               {!isNew && selected && (
@@ -287,11 +287,11 @@ export default function ScriptsPage() {
                   <button
                     onClick={handleTest}
                     disabled={testing}
-                    className="px-4 py-2 bg-[#e0af68] text-[#1a1b26] rounded text-sm hover:bg-[#e8bf7a] disabled:opacity-50"
+                    className="px-4 py-2 bg-[var(--yellow)] text-white rounded text-sm hover:bg-[var(--yellow)]/90 disabled:opacity-50"
                   >
                     {testing ? '测试中...' : '测试脚本'}
                   </button>
-                  <button onClick={() => setDeleteConfirm(selected)} className="px-4 py-2 bg-[#f7768e] text-[#1a1b26] rounded text-sm hover:bg-[#ff9eaf]">
+                  <button onClick={() => setDeleteConfirm(selected)} className="px-4 py-2 bg-[var(--red)] text-white rounded text-sm hover:bg-[var(--red)]/90">
                     删除
                   </button>
                 </>
@@ -300,10 +300,10 @@ export default function ScriptsPage() {
 
             {/* 测试结果 */}
             {testResult && (
-              <div className="bg-[#1a1b26] border border-[#3b4261] rounded p-3">
-                <h4 className="text-sm font-medium text-[#9ece6a] mb-2">测试结果</h4>
+              <div className="bg-[var(--bg-inset)] border border-[var(--border)] rounded p-3">
+                <h4 className="text-sm font-medium text-[var(--green)] mb-2">测试结果</h4>
                 {testResult.error ? (
-                  <pre className="text-xs font-mono text-[#f7768e] whitespace-pre-wrap">{testResult.error}</pre>
+                  <pre className="text-xs font-mono text-[var(--red)] whitespace-pre-wrap">{testResult.error}</pre>
                 ) : (
                   <pre className="text-xs font-mono text-[#e6edf3] whitespace-pre-wrap">{testResult.output || '（无输出）'}</pre>
                 )}
@@ -316,12 +316,12 @@ export default function ScriptsPage() {
       {/* 删除确认 */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setDeleteConfirm(null)}>
-          <div className="bg-[#24283b] border border-[#3b4261] rounded-lg p-4 w-80" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-[var(--hover-bg)] border border-[var(--border)] rounded-lg p-4 w-80" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-base font-semibold mb-2">确认删除</h3>
-            <p className="text-sm text-[#565f89] mb-4">确定要删除脚本 "{deleteConfirm.name}" 吗？</p>
+            <p className="text-sm text-[var(--text-tertiary)] mb-4">确定要删除脚本 "{deleteConfirm.name}" 吗？</p>
             <div className="flex gap-2 justify-end">
-              <button onClick={() => setDeleteConfirm(null)} className="px-3 py-1.5 text-sm bg-[#1a1b26] rounded hover:bg-[#3b4261]">取消</button>
-              <button onClick={() => handleDelete(deleteConfirm)} className="px-3 py-1.5 text-sm bg-[#f7768e] text-[#1a1b26] rounded hover:bg-[#ff9eaf]">删除</button>
+              <button onClick={() => setDeleteConfirm(null)} className="px-3 py-1.5 text-sm bg-[var(--bg-inset)] rounded hover:bg-[var(--hover-bg)]">取消</button>
+              <button onClick={() => handleDelete(deleteConfirm)} className="px-3 py-1.5 text-sm bg-[var(--red)] text-white rounded hover:bg-[var(--red)]/90">删除</button>
             </div>
           </div>
         </div>

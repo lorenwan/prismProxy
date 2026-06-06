@@ -91,17 +91,17 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-[#1a1b26] p-6">
+    <div className="h-full overflow-y-auto bg-[var(--bg-inset)] p-6">
       <div className="max-w-2xl space-y-8">
         {/* 代理控制 */}
         <section className="space-y-4">
-          <h2 className="text-lg font-semibold text-[#7aa2f7]">代理控制</h2>
-          <div className="bg-[#24283b] rounded-lg p-4 space-y-4">
+          <h2 className="text-lg font-semibold text-[var(--blue)]">代理控制</h2>
+          <div className="bg-[var(--hover-bg)] rounded-lg p-4 space-y-4">
             {/* 代理开关 */}
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-sm font-medium">HTTP 代理服务</div>
-                <div className="text-xs text-[#565f89]">
+                <div className="text-xs text-[var(--text-tertiary)]">
                   {proxyRunning 
                     ? `运行中 - ${proxyAddr}` 
                     : '已停止 - 点击启动代理服务'}
@@ -111,7 +111,7 @@ export default function SettingsPage() {
                 onClick={toggleProxy}
                 disabled={proxyLoading}
                 className={`relative w-14 h-7 rounded-full transition-colors ${
-                  proxyRunning ? 'bg-[#9ece6a]' : 'bg-[#3b4261]'
+                  proxyRunning ? 'bg-[var(--green)]' : 'bg-[var(--border)]'
                 } ${proxyLoading ? 'opacity-50' : ''}`}
               >
                 <div
@@ -131,7 +131,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-sm font-medium">系统代理</div>
-                <div className="text-xs text-[#565f89]">
+                <div className="text-xs text-[var(--text-tertiary)]">
                   {systemProxyEnabled 
                     ? '已启用 - 所有流量经过 PrismProxy' 
                     : '已禁用 - 仅手动代理'}
@@ -141,7 +141,7 @@ export default function SettingsPage() {
                 onClick={toggleSystemProxy}
                 disabled={systemProxyLoading || !proxyRunning}
                 className={`relative w-14 h-7 rounded-full transition-colors ${
-                  systemProxyEnabled ? 'bg-[#9ece6a]' : 'bg-[#3b4261]'
+                  systemProxyEnabled ? 'bg-[var(--green)]' : 'bg-[var(--border)]'
                 } ${systemProxyLoading || !proxyRunning ? 'opacity-50' : ''}`}
               >
                 <div
@@ -159,31 +159,31 @@ export default function SettingsPage() {
 
             {/* 状态指示 */}
             <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${proxyRunning ? 'bg-[#9ece6a]' : 'bg-[#f7768e]'}`} />
-              <span className="text-xs text-[#565f89]">
+              <div className={`w-2 h-2 rounded-full ${proxyRunning ? 'bg-[var(--green)]' : 'bg-[var(--red)]'}`} />
+              <span className="text-xs text-[var(--text-tertiary)]">
                 {proxyRunning ? '代理已就绪' : '代理未启动'}
               </span>
               {systemProxyEnabled && (
                 <>
-                  <span className="text-xs text-[#565f89]">•</span>
-                  <div className="w-2 h-2 rounded-full bg-[#7aa2f7]" />
-                  <span className="text-xs text-[#565f89]">系统代理已启用</span>
+                  <span className="text-xs text-[var(--text-tertiary)]">•</span>
+                  <div className="w-2 h-2 rounded-full bg-[var(--blue)]" />
+                  <span className="text-xs text-[var(--text-tertiary)]">系统代理已启用</span>
                 </>
               )}
             </div>
 
             {/* 使用说明 */}
             {proxyRunning && !systemProxyEnabled && (
-              <div className="text-xs text-[#565f89] bg-[#1a1b26] p-3 rounded">
+              <div className="text-xs text-[var(--text-tertiary)] bg-[var(--bg-inset)] p-3 rounded">
                 <p className="font-medium mb-1">使用方法：</p>
-                <p>1. 设置浏览器代理为 <code className="text-[#7aa2f7]">{proxyAddr}</code></p>
+                <p>1. 设置浏览器代理为 <code className="text-[var(--blue)]">{proxyAddr}</code></p>
                 <p>2. 或启用系统代理（上方开关）</p>
                 <p>3. 开始抓包调试</p>
               </div>
             )}
 
             {systemProxyEnabled && (
-              <div className="text-xs text-[#565f89] bg-[#1a1b26] p-3 rounded">
+              <div className="text-xs text-[var(--text-tertiary)] bg-[var(--bg-inset)] p-3 rounded">
                 <p className="font-medium mb-1">系统代理已启用：</p>
                 <p>• 所有 HTTP/HTTPS 流量将经过 PrismProxy</p>
                 <p>• 无需手动配置浏览器代理</p>
@@ -195,16 +195,16 @@ export default function SettingsPage() {
 
         {/* 代理配置 */}
         <section className="space-y-4">
-          <h2 className="text-lg font-semibold text-[#7aa2f7]">代理配置</h2>
-          <div className="bg-[#24283b] rounded-lg p-4 space-y-4">
+          <h2 className="text-lg font-semibold text-[var(--blue)]">代理配置</h2>
+          <div className="bg-[var(--hover-bg)] rounded-lg p-4 space-y-4">
             {/* 端口 */}
             <div>
-              <label className="block text-sm text-[#565f89] mb-1">代理端口</label>
+              <label className="block text-sm text-[var(--text-tertiary)] mb-1">代理端口</label>
               <input
                 type="number"
                 value={settings.proxy.port}
                 onChange={(e) => updateProxy('port', Number(e.target.value))}
-                className="w-40 px-3 py-2 bg-[#1a1b26] border border-[#3b4261] rounded text-sm focus:border-[#7aa2f7] focus:outline-none"
+                className="w-40 px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
               />
             </div>
 
@@ -212,12 +212,12 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-sm">MITM (中间人攻击)</div>
-                <div className="text-xs text-[#565f89]">启用后可查看 HTTPS 请求内容</div>
+                <div className="text-xs text-[var(--text-tertiary)]">启用后可查看 HTTPS 请求内容</div>
               </div>
               <button
                 onClick={() => updateProxy('mitmEnabled', !settings.proxy.mitmEnabled)}
                 className={`w-10 h-5 rounded-full transition-colors ${
-                  settings.proxy.mitmEnabled ? 'bg-[#9ece6a]' : 'bg-[#3b4261]'
+                  settings.proxy.mitmEnabled ? 'bg-[var(--green)]' : 'bg-[var(--border)]'
                 }`}
               >
                 <div
@@ -232,26 +232,26 @@ export default function SettingsPage() {
             <div>
               <button
                 onClick={downloadCaCert}
-                className="px-4 py-2 bg-[#283457] text-[#7aa2f7] rounded text-sm hover:bg-[#3b4261]"
+                className="px-4 py-2 bg-[var(--selected-bg)] text-[var(--blue)] rounded text-sm hover:bg-[var(--hover-bg)]"
               >
                 下载 CA 证书
               </button>
-              <span className="ml-2 text-xs text-[#565f89]">安装证书后可解密 HTTPS 流量</span>
+              <span className="ml-2 text-xs text-[var(--text-tertiary)]">安装证书后可解密 HTTPS 流量</span>
             </div>
           </div>
         </section>
 
         {/* AI 配置 */}
         <section className="space-y-4">
-          <h2 className="text-lg font-semibold text-[#7aa2f7]">AI 配置</h2>
-          <div className="bg-[#24283b] rounded-lg p-4 space-y-4">
+          <h2 className="text-lg font-semibold text-[var(--blue)]">AI 配置</h2>
+          <div className="bg-[var(--hover-bg)] rounded-lg p-4 space-y-4">
             {/* Provider */}
             <div>
-              <label className="block text-sm text-[#565f89] mb-1">AI Provider</label>
+              <label className="block text-sm text-[var(--text-tertiary)] mb-1">AI Provider</label>
               <select
                 value={settings.ai.provider}
                 onChange={(e) => updateAi('provider', e.target.value)}
-                className="w-full px-3 py-2 bg-[#1a1b26] border border-[#3b4261] rounded text-sm focus:border-[#7aa2f7] focus:outline-none"
+                className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
               >
                 <option value="openai">OpenAI</option>
                 <option value="claude">Claude</option>
@@ -261,34 +261,34 @@ export default function SettingsPage() {
 
             {/* API Key */}
             <div>
-              <label className="block text-sm text-[#565f89] mb-1">API Key</label>
+              <label className="block text-sm text-[var(--text-tertiary)] mb-1">API Key</label>
               <input
                 type="password"
                 value={settings.ai.apiKey}
                 onChange={(e) => updateAi('apiKey', e.target.value)}
-                className="w-full px-3 py-2 bg-[#1a1b26] border border-[#3b4261] rounded text-sm focus:border-[#7aa2f7] focus:outline-none"
+                className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                 placeholder="sk-..."
               />
             </div>
 
             {/* Base URL */}
             <div>
-              <label className="block text-sm text-[#565f89] mb-1">Base URL</label>
+              <label className="block text-sm text-[var(--text-tertiary)] mb-1">Base URL</label>
               <input
                 value={settings.ai.baseUrl}
                 onChange={(e) => updateAi('baseUrl', e.target.value)}
-                className="w-full px-3 py-2 bg-[#1a1b26] border border-[#3b4261] rounded text-sm focus:border-[#7aa2f7] focus:outline-none"
+                className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                 placeholder="https://api.openai.com/v1"
               />
             </div>
 
             {/* Model */}
             <div>
-              <label className="block text-sm text-[#565f89] mb-1">模型</label>
+              <label className="block text-sm text-[var(--text-tertiary)] mb-1">模型</label>
               <input
                 value={settings.ai.model}
                 onChange={(e) => updateAi('model', e.target.value)}
-                className="w-full px-3 py-2 bg-[#1a1b26] border border-[#3b4261] rounded text-sm focus:border-[#7aa2f7] focus:outline-none"
+                className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                 placeholder="gpt-4o"
               />
             </div>
@@ -297,10 +297,10 @@ export default function SettingsPage() {
 
         {/* 保存按钮 */}
         <div className="flex items-center gap-3">
-          <button onClick={handleSave} className="px-6 py-2 bg-[#7aa2f7] text-[#1a1b26] rounded text-sm hover:bg-[#89b4fa]">
+          <button onClick={handleSave} className="px-6 py-2 bg-[var(--blue)] text-white rounded text-sm hover:bg-[var(--blue)]/90">
             保存设置
           </button>
-          {saved && <span className="text-sm text-[#9ece6a]">保存成功</span>}
+          {saved && <span className="text-sm text-[var(--green)]">保存成功</span>}
         </div>
       </div>
     </div>

@@ -1,98 +1,109 @@
-import { useEffect, useRef, type ReactNode } from 'react'
-import { X } from 'lucide-react'
-import { clsx } from 'clsx'
-import { twMerge } from 'tailwind-merge'
-import Button from './Button'
+import * as React from "react"
+import { cn } from "@/lib/utils"
 
 interface DialogProps {
   open: boolean
-  onClose: () => void
-  title?: ReactNode
-  description?: string
-  children: ReactNode
-  footer?: ReactNode
-  size?: 'sm' | 'md' | 'lg'
-  className?: string
+  onOpenChange: (open: boolean) => void
+  children: React.ReactNode
 }
 
-const sizeStyles = {
-  sm: 'max-w-sm',
-  md: 'max-w-lg',
-  lg: 'max-w-2xl',
-}
-
-export default function Dialog({
-  open,
-  onClose,
-  title,
-  description,
-  children,
-  footer,
-  size = 'md',
-  className,
-}: DialogProps) {
-  const overlayRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
-  }, [open, onClose])
-
+const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
   if (!open) return null
 
+  // 处理 Escape 键关闭
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') onOpenChange(false)
+  }
+
+  // 添加键盘事件监听
+  React.useEffect(() => {
+    if (open) {
+      document.addEventListener('keydown', handleKeyDown)
+      return () => document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [open, onOpenChange])
+
   return (
-    <div
-      ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      onClick={(e) => {
-        if (e.target === overlayRef.current) onClose()
-      }}
-    >
-      {/* 遮罩 */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-
-      {/* 对话框 */}
+    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true">
       <div
-        className={twMerge(
-          clsx(
-            'relative w-full mx-4 rounded-lg border border-[#30363d] bg-[#161b22] shadow-2xl',
-            'animate-in fade-in zoom-in-95 duration-150',
-            sizeStyles[size],
-            className
-          )
-        )}
-      >
-        {/* 头部 */}
-        {(title || description) && (
-          <div className="flex items-start justify-between px-5 pt-5 pb-3">
-            <div>
-              {title && <h2 className="text-base font-semibold text-[#e6edf3]">{title}</h2>}
-              {description && <p className="mt-1 text-sm text-[#8b949e]">{description}</p>}
-            </div>
-            <button
-              onClick={onClose}
-              className="p-1 rounded-md text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] transition-colors"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        )}
-
-        {/* 内容 */}
-        <div className="px-5 py-3">{children}</div>
-
-        {/* 底部 */}
-        {footer && (
-          <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-[#30363d]">
-            <Button variant="ghost" onClick={onClose}>取消</Button>
-            {footer}
-          </div>
-        )}
+        className="fixed inset-0 bg-black/80"
+        onClick={() => onOpenChange(false)}
+      />
+      <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+        {children}
       </div>
     </div>
   )
+}
+
+const DialogContent = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, children, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg",
+      className
+    )}
+    {...props}
+  >
+    {children}
+  </div>
+))
+DialogContent.displayName = "DialogContent"
+
+const DialogHeader = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn("flex flex-col space-y-1.5 text-center sm:text-left", className)}
+    {...props}
+  />
+)
+DialogHeader.displayName = "DialogHeader"
+
+const DialogFooter = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2", className)}
+    {...props}
+  />
+)
+DialogFooter.displayName = "DialogFooter"
+
+const DialogTitle = React.forwardRef<
+  HTMLHeadingElement,
+  React.HTMLAttributes<HTMLHeadingElement>
+>(({ className, ...props }, ref) => (
+  <h2
+    ref={ref}
+    className={cn("text-lg font-semibold leading-none tracking-tight", className)}
+    {...props}
+  />
+))
+DialogTitle.displayName = "DialogTitle"
+
+const DialogDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <p
+    ref={ref}
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
+))
+DialogDescription.displayName = "DialogDescription"
+
+export {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
 }

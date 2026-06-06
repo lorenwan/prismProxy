@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core'
-import { getTraffic } from './traffic'
+import { getTraffic } from '../features/traffic/trafficService'
 
 export interface DiffResult {
   leftId: string

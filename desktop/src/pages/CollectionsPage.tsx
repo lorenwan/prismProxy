@@ -192,28 +192,28 @@ export default function CollectionsPage() {
   return (
     <div className="flex h-full">
       {/* 左侧集合树 */}
-      <div className="w-72 border-r border-[#3b4261] flex flex-col bg-[#1a1b26]">
-        <div className="flex items-center gap-1 p-2 border-b border-[#3b4261]">
-          <button onClick={() => setShowNewCollection(true)} className="px-2 py-1 text-xs bg-[#7aa2f7] text-[#1a1b26] rounded hover:bg-[#89b4fa]">
+      <div className="w-72 border-r border-[var(--border)] flex flex-col bg-[var(--bg-inset)]">
+        <div className="flex items-center gap-1 p-2 border-b border-[var(--border)]">
+          <button onClick={() => setShowNewCollection(true)} className="px-2 py-1 text-xs bg-[var(--blue)] text-white rounded hover:bg-[var(--blue)]/90">
             新建集合
           </button>
-          <button onClick={handleImport} className="px-2 py-1 text-xs bg-[#24283b] rounded hover:bg-[#3b4261]">
+          <button onClick={handleImport} className="px-2 py-1 text-xs bg-[var(--hover-bg)] rounded hover:bg-[var(--hover-bg)]">
             导入
           </button>
           <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleFileImport} />
         </div>
 
         {showNewCollection && (
-          <div className="p-2 border-b border-[#3b4261] flex gap-1">
+          <div className="p-2 border-b border-[var(--border)] flex gap-1">
             <input
               value={newCollectionName}
               onChange={(e) => setNewCollectionName(e.target.value)}
-              className="flex-1 px-2 py-1 bg-[#24283b] border border-[#3b4261] rounded text-xs focus:border-[#7aa2f7] focus:outline-none"
+              className="flex-1 px-2 py-1 bg-[var(--hover-bg)] border border-[var(--border)] rounded text-xs focus:border-[var(--blue)] focus:outline-none"
               placeholder="集合名称"
               onKeyDown={(e) => e.key === 'Enter' && handleNewCollection()}
               autoFocus
             />
-            <button onClick={handleNewCollection} className="px-2 py-1 text-xs bg-[#9ece6a] text-[#1a1b26] rounded">OK</button>
+            <button onClick={handleNewCollection} className="px-2 py-1 text-xs bg-[var(--green)] text-white rounded">OK</button>
           </div>
         )}
 
@@ -222,16 +222,16 @@ export default function CollectionsPage() {
             <div key={col.id}>
               <div
                 onClick={() => { setSelectedCollection(col); setSelectedRequest(null); setEditingRequest({}) }}
-                className={`flex items-center gap-2 px-3 py-2 cursor-pointer border-b border-[#24283b] ${
-                  selectedCollection?.id === col.id && !selectedRequest ? 'bg-[#283457]' : 'hover:bg-[#24283b]'
+                className={`flex items-center gap-2 px-3 py-2 cursor-pointer border-b border-[var(--border-subtle)] ${
+                  selectedCollection?.id === col.id && !selectedRequest ? 'bg-[var(--selected-bg)]' : 'hover:bg-[var(--hover-bg)]'
                 }`}
               >
                 <span className="text-sm">📁</span>
                 <span className="flex-1 text-sm truncate">{col.name}</span>
-                <span className="text-xs text-[#565f89]">{col.requests?.length || 0}</span>
+                <span className="text-xs text-[var(--text-tertiary)]">{col.requests?.length || 0}</span>
                 <button
                   onClick={(e) => { e.stopPropagation(); handleDeleteCollection(col.id) }}
-                  className="text-xs text-[#f7768e] hover:text-[#ff9eaf] opacity-0 group-hover:opacity-100"
+                  className="text-xs text-[var(--red)] hover:text-[#ff9eaf] opacity-0 group-hover:opacity-100"
                 >
                   ✕
                 </button>
@@ -240,16 +240,16 @@ export default function CollectionsPage() {
                 <div
                   key={req.id}
                   onClick={() => handleSelectRequest(req)}
-                  className={`flex items-center gap-2 pl-6 pr-3 py-1.5 cursor-pointer border-b border-[#24283b] ${
-                    selectedRequest?.id === req.id ? 'bg-[#283457]' : 'hover:bg-[#24283b]'
+                  className={`flex items-center gap-2 pl-6 pr-3 py-1.5 cursor-pointer border-b border-[var(--border-subtle)] ${
+                    selectedRequest?.id === req.id ? 'bg-[var(--selected-bg)]' : 'hover:bg-[var(--hover-bg)]'
                   }`}
                 >
                   <span className={`text-xs font-mono px-1 rounded ${
-                    req.method === 'GET' ? 'bg-[#9ece6a]/20 text-[#9ece6a]' :
-                    req.method === 'POST' ? 'bg-[#7aa2f7]/20 text-[#7aa2f7]' :
-                    req.method === 'PUT' ? 'bg-[#e0af68]/20 text-[#e0af68]' :
-                    req.method === 'DELETE' ? 'bg-[#f7768e]/20 text-[#f7768e]' :
-                    'bg-[#565f89]/20 text-[#565f89]'
+                    req.method === 'GET' ? 'bg-[var(--green)]/20 text-[var(--green)]' :
+                    req.method === 'POST' ? 'bg-[var(--blue)]/20 text-[var(--blue)]' :
+                    req.method === 'PUT' ? 'bg-[var(--yellow)]/20 text-[var(--yellow)]' :
+                    req.method === 'DELETE' ? 'bg-[var(--red)]/20 text-[var(--red)]' :
+                    'bg-[var(--text-tertiary)]/20 text-[var(--text-tertiary)]'
                   }`}>{req.method}</span>
                   <span className="text-xs truncate">{req.name || req.url}</span>
                 </div>
@@ -257,7 +257,7 @@ export default function CollectionsPage() {
               {selectedCollection?.id === col.id && (
                 <div
                   onClick={() => handleNewRequest(col.id)}
-                  className="pl-6 pr-3 py-1.5 cursor-pointer border-b border-[#24283b] hover:bg-[#24283b] text-xs text-[#565f89]"
+                  className="pl-6 pr-3 py-1.5 cursor-pointer border-b border-[var(--border-subtle)] hover:bg-[var(--hover-bg)] text-xs text-[var(--text-tertiary)]"
                 >
                   + 新建请求
                 </div>
@@ -265,43 +265,43 @@ export default function CollectionsPage() {
             </div>
           ))}
           {collections.length === 0 && (
-            <div className="p-4 text-center text-[#565f89] text-sm">暂无集合</div>
+            <div className="p-4 text-center text-[var(--text-tertiary)] text-sm">暂无集合</div>
           )}
         </div>
       </div>
 
       {/* 右侧请求编辑器 */}
-      <div className="flex-1 flex flex-col bg-[#24283b] overflow-hidden">
+      <div className="flex-1 flex flex-col bg-[var(--hover-bg)] overflow-hidden">
         {selectedCollection ? (
           <>
             {/* 请求构建器 */}
-            <div className="p-4 border-b border-[#3b4261] space-y-3">
+            <div className="p-4 border-b border-[var(--border)] space-y-3">
               <div className="flex gap-2">
                 <select
                   value={editingRequest.method || 'GET'}
                   onChange={(e) => setEditingRequest({ ...editingRequest, method: e.target.value })}
-                  className="px-2 py-2 bg-[#1a1b26] border border-[#3b4261] rounded text-sm font-mono focus:border-[#7aa2f7] focus:outline-none"
+                  className="px-2 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm font-mono focus:border-[var(--blue)] focus:outline-none"
                 >
                   {methods.map((m) => <option key={m} value={m}>{m}</option>)}
                 </select>
                 <input
                   value={editingRequest.url || ''}
                   onChange={(e) => setEditingRequest({ ...editingRequest, url: e.target.value })}
-                  className="flex-1 px-3 py-2 bg-[#1a1b26] border border-[#3b4261] rounded text-sm font-mono focus:border-[#7aa2f7] focus:outline-none"
+                  className="flex-1 px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm font-mono focus:border-[var(--blue)] focus:outline-none"
                   placeholder="输入请求 URL，支持 {{variable}} 变量"
                 />
                 <button
                   onClick={handleSend}
                   disabled={sending || !editingRequest.url}
-                  className="px-4 py-2 bg-[#9ece6a] text-[#1a1b26] rounded text-sm hover:bg-[#a9d882] disabled:opacity-50"
+                  className="px-4 py-2 bg-[var(--green)] text-white rounded text-sm hover:bg-[#a9d882] disabled:opacity-50"
                 >
                   {sending ? '发送中...' : '发送'}
                 </button>
-                <button onClick={handleSaveRequest} className="px-4 py-2 bg-[#7aa2f7] text-[#1a1b26] rounded text-sm hover:bg-[#89b4fa]">
+                <button onClick={handleSaveRequest} className="px-4 py-2 bg-[var(--blue)] text-white rounded text-sm hover:bg-[var(--blue)]/90">
                   保存
                 </button>
                 {!isNewRequest && selectedRequest && (
-                  <button onClick={handleDeleteRequest} className="px-3 py-2 bg-[#f7768e] text-[#1a1b26] rounded text-sm hover:bg-[#ff9eaf]">
+                  <button onClick={handleDeleteRequest} className="px-3 py-2 bg-[var(--red)] text-white rounded text-sm hover:bg-[var(--red)]/90">
                     删除
                   </button>
                 )}
@@ -310,7 +310,7 @@ export default function CollectionsPage() {
               <input
                 value={editingRequest.name || ''}
                 onChange={(e) => setEditingRequest({ ...editingRequest, name: e.target.value })}
-                className="w-full px-3 py-2 bg-[#1a1b26] border border-[#3b4261] rounded text-sm focus:border-[#7aa2f7] focus:outline-none"
+                className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                 placeholder="请求名称"
               />
             </div>
@@ -318,14 +318,14 @@ export default function CollectionsPage() {
             {/* 标签页区域 */}
             <div className="flex-1 flex overflow-hidden">
               {/* Headers */}
-              <div className="w-1/2 border-r border-[#3b4261] flex flex-col overflow-hidden">
-                <div className="flex items-center justify-between px-3 py-2 border-b border-[#3b4261]">
-                  <span className="text-xs font-medium text-[#7aa2f7]">Headers</span>
-                  <button onClick={addHeaderRow} className="text-xs text-[#565f89] hover:text-[#7aa2f7]">+ 添加</button>
+              <div className="w-1/2 border-r border-[var(--border)] flex flex-col overflow-hidden">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--border)]">
+                  <span className="text-xs font-medium text-[var(--blue)]">Headers</span>
+                  <button onClick={addHeaderRow} className="text-xs text-[var(--text-tertiary)] hover:text-[var(--blue)]">+ 添加</button>
                 </div>
                 <div className="flex-1 overflow-y-auto">
                   {headers.map((h, i) => (
-                    <div key={i} className="flex items-center gap-1 px-2 py-1 border-b border-[#1a1b26]">
+                    <div key={i} className="flex items-center gap-1 px-2 py-1 border-b border-[var(--border-subtle)]">
                       <input
                         value={h.key}
                         onChange={(e) => updateHeader(i, 'key', e.target.value)}
@@ -338,20 +338,20 @@ export default function CollectionsPage() {
                         className="flex-1 px-2 py-1 bg-transparent text-xs font-mono focus:outline-none"
                         placeholder="Value"
                       />
-                      <button onClick={() => removeHeaderRow(i)} className="text-xs text-[#f7768e] hover:text-[#ff9eaf] px-1">✕</button>
+                      <button onClick={() => removeHeaderRow(i)} className="text-xs text-[var(--red)] hover:text-[#ff9eaf] px-1">✕</button>
                     </div>
                   ))}
                 </div>
 
                 {/* Body */}
-                <div className="border-t border-[#3b4261] flex-1 flex flex-col min-h-0">
-                  <div className="px-3 py-2 border-b border-[#3b4261]">
-                    <span className="text-xs font-medium text-[#7aa2f7]">Body</span>
+                <div className="border-t border-[var(--border)] flex-1 flex flex-col min-h-0">
+                  <div className="px-3 py-2 border-b border-[var(--border)]">
+                    <span className="text-xs font-medium text-[var(--blue)]">Body</span>
                   </div>
                   <textarea
                     value={editingRequest.body || ''}
                     onChange={(e) => setEditingRequest({ ...editingRequest, body: e.target.value })}
-                    className="flex-1 px-3 py-2 bg-[#1a1b26] text-xs font-mono resize-none focus:outline-none"
+                    className="flex-1 px-3 py-2 bg-[var(--bg-inset)] text-xs font-mono resize-none focus:outline-none"
                     placeholder='{"key": "value"}'
                   />
                 </div>
@@ -359,24 +359,24 @@ export default function CollectionsPage() {
 
               {/* 响应面板 */}
               <div className="w-1/2 flex flex-col overflow-hidden">
-                <div className="px-3 py-2 border-b border-[#3b4261]">
-                  <span className="text-xs font-medium text-[#7aa2f7]">响应</span>
+                <div className="px-3 py-2 border-b border-[var(--border)]">
+                  <span className="text-xs font-medium text-[var(--blue)]">响应</span>
                 </div>
                 {response ? (
                   <div className="flex-1 overflow-y-auto">
-                    <div className="px-3 py-2 flex items-center gap-3 border-b border-[#1a1b26]">
+                    <div className="px-3 py-2 flex items-center gap-3 border-b border-[var(--border-subtle)]">
                       <span className={`text-sm font-mono px-2 py-0.5 rounded ${
-                        response.status < 300 ? 'bg-[#9ece6a]/20 text-[#9ece6a]' :
-                        response.status < 400 ? 'bg-[#e0af68]/20 text-[#e0af68]' :
-                        'bg-[#f7768e]/20 text-[#f7768e]'
+                        response.status < 300 ? 'bg-[var(--green)]/20 text-[var(--green)]' :
+                        response.status < 400 ? 'bg-[var(--yellow)]/20 text-[var(--yellow)]' :
+                        'bg-[var(--red)]/20 text-[var(--red)]'
                       }`}>{response.status} {response.statusText}</span>
-                      <span className="text-xs text-[#565f89]">{response.duration}ms</span>
+                      <span className="text-xs text-[var(--text-tertiary)]">{response.duration}ms</span>
                     </div>
-                    <div className="px-3 py-2 border-b border-[#1a1b26]">
-                      <div className="text-xs text-[#565f89] mb-1">响应头</div>
+                    <div className="px-3 py-2 border-b border-[var(--border-subtle)]">
+                      <div className="text-xs text-[var(--text-tertiary)] mb-1">响应头</div>
                       {Object.entries(response.headers).map(([key, value]) => (
                         <div key={key} className="text-xs font-mono">
-                          <span className="text-[#7aa2f7]">{key}</span>: {value}
+                          <span className="text-[var(--blue)]">{key}</span>: {value}
                         </div>
                       ))}
                     </div>
@@ -385,7 +385,7 @@ export default function CollectionsPage() {
                     </pre>
                   </div>
                 ) : (
-                  <div className="flex-1 flex items-center justify-center text-[#565f89] text-sm">
+                  <div className="flex-1 flex items-center justify-center text-[var(--text-tertiary)] text-sm">
                     {sending ? '请求发送中...' : '点击"发送"查看响应'}
                   </div>
                 )}
@@ -393,7 +393,7 @@ export default function CollectionsPage() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-[#565f89] text-sm">
+          <div className="flex-1 flex items-center justify-center text-[var(--text-tertiary)] text-sm">
             选择或创建一个集合开始
           </div>
         )}

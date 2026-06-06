@@ -1,5 +1,5 @@
-import { useEffect, useRef, useCallback } from 'react'
-import { useTrafficStore } from '../stores/trafficStore'
+import { useEffect, useRef, useCallback, useState } from 'react'
+import { useTrafficStore } from '../features/traffic/trafficStore'
 import type { WsMessage, Transaction } from '../types'
 
 // WebSocket 连接状态
@@ -9,7 +9,7 @@ export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimerRef = useRef<number | null>(null)
   const reconnectDelayRef = useRef(1000)
-  const statusRef = useRef<WsStatus>('disconnected')
+  const [status, setStatus] = useState<WsStatus>('disconnected')
 
   const { addTraffic, removeTraffic, clearTraffic } = useTrafficStore()
 
@@ -20,12 +20,12 @@ export function useWebSocket() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const wsUrl = `${protocol}//${window.location.host}/ws`
 
-    statusRef.current = 'connecting'
+    setStatus('connecting')
     const ws = new WebSocket(wsUrl)
 
     ws.onopen = () => {
       console.log('WebSocket 已连接')
-      statusRef.current = 'connected'
+      setStatus('connected')
       reconnectDelayRef.current = 1000 // 重置重连延迟
     }
 
@@ -40,7 +40,7 @@ export function useWebSocket() {
 
     ws.onclose = () => {
       console.log('WebSocket 已断开')
-      statusRef.current = 'disconnected'
+      setStatus('disconnected')
       wsRef.current = null
 
       // 指数退避重连
@@ -84,7 +84,7 @@ export function useWebSocket() {
       wsRef.current.close()
       wsRef.current = null
     }
-    statusRef.current = 'disconnected'
+    setStatus('disconnected')
   }, [])
 
   useEffect(() => {
@@ -93,7 +93,7 @@ export function useWebSocket() {
   }, [connect, disconnect])
 
   return {
-    status: statusRef.current,
+    status,
     connect,
     disconnect,
   }

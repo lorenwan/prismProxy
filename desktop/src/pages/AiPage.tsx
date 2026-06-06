@@ -81,34 +81,34 @@ export default function AiPage() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#1a1b26]">
+    <div className="flex flex-col h-full bg-[var(--bg-inset)]">
       {/* 顶部栏 */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-[#3b4261]">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--border)]">
         <div className="flex items-center gap-3">
           <h2 className="text-sm font-semibold">AI 助手</h2>
           <select
             value={provider}
             onChange={(e) => setProvider(e.target.value)}
-            className="px-2 py-1 bg-[#24283b] border border-[#3b4261] rounded text-xs focus:border-[#7aa2f7] focus:outline-none"
+            className="px-2 py-1 bg-[var(--hover-bg)] border border-[var(--border)] rounded text-xs focus:border-[var(--blue)] focus:outline-none"
           >
             {providers.map((p) => (
               <option key={p.value} value={p.value}>{p.label}</option>
             ))}
           </select>
         </div>
-        <button onClick={handleClear} className="px-2 py-1 text-xs bg-[#24283b] rounded hover:bg-[#3b4261]">
+        <button onClick={handleClear} className="px-2 py-1 text-xs bg-[var(--hover-bg)] rounded hover:bg-[var(--hover-bg)]">
           清空对话
         </button>
       </div>
 
       {/* 快捷操作 */}
-      <div className="flex gap-2 px-4 py-2 border-b border-[#3b4261]">
+      <div className="flex gap-2 px-4 py-2 border-b border-[var(--border)]">
         {quickActions.map((action) => (
           <button
             key={action.label}
             onClick={() => handleSend(action.prompt)}
             disabled={loading}
-            className="px-3 py-1 text-xs bg-[#24283b] border border-[#3b4261] rounded hover:bg-[#283457] hover:border-[#7aa2f7] disabled:opacity-50"
+            className="px-3 py-1 text-xs bg-[var(--hover-bg)] border border-[var(--border)] rounded hover:bg-[var(--selected-bg)] hover:border-[var(--blue)] disabled:opacity-50"
           >
             {action.label}
           </button>
@@ -118,22 +118,22 @@ export default function AiPage() {
       {/* 消息列表 */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
         {messages.length === 0 && (
-          <div className="flex items-center justify-center h-full text-[#565f89] text-sm">
+          <div className="flex items-center justify-center h-full text-[var(--text-tertiary)] text-sm">
             选择快捷操作或输入问题开始对话
           </div>
         )}
         {messages.map((msg, i) => (
           <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
             {msg.role === 'assistant' && (
-              <div className="w-8 h-8 rounded-lg bg-[#7aa2f7] flex items-center justify-center flex-shrink-0">
-                <span className="text-sm text-[#1a1b26] font-bold">AI</span>
+              <div className="w-8 h-8 rounded-lg bg-[var(--blue)] flex items-center justify-center flex-shrink-0">
+                <span className="text-sm text-white font-bold">AI</span>
               </div>
             )}
             <div
               className={`max-w-[70%] px-3 py-2 rounded-lg text-sm whitespace-pre-wrap ${
                 msg.role === 'user'
-                  ? 'bg-[#7aa2f7] text-[#1a1b26]'
-                  : 'bg-[#24283b]'
+                  ? 'bg-[var(--blue)] text-white'
+                  : 'bg-[var(--hover-bg)]'
               }`}
             >
               {msg.content || (loading && i === messages.length - 1 ? '思考中...' : '')}
@@ -144,22 +144,22 @@ export default function AiPage() {
       </div>
 
       {/* 输入框 */}
-      <div className="px-4 py-3 border-t border-[#3b4261]">
+      <div className="px-4 py-3 border-t border-[var(--border)]">
         <div className="flex gap-2">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-            className="flex-1 px-3 py-2 bg-[#24283b] border border-[#3b4261] rounded text-sm focus:border-[#7aa2f7] focus:outline-none"
+            className="flex-1 px-3 py-2 bg-[var(--hover-bg)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
             placeholder="输入消息..."
             disabled={loading}
           />
           {loading ? (
-            <button onClick={handleStop} className="px-4 py-2 bg-[#f7768e] text-[#1a1b26] rounded text-sm hover:bg-[#ff9eaf]">
+            <button onClick={handleStop} className="px-4 py-2 bg-[var(--red)] text-white rounded text-sm hover:bg-[var(--red)]/90">
               停止
             </button>
           ) : (
-            <button onClick={() => handleSend()} className="px-4 py-2 bg-[#7aa2f7] text-[#1a1b26] rounded text-sm hover:bg-[#89b4fa]">
+            <button onClick={() => handleSend()} className="px-4 py-2 bg-[var(--blue)] text-white rounded text-sm hover:bg-[var(--blue)]/90">
               发送
             </button>
           )}

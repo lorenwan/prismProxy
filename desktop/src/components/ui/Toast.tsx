@@ -58,10 +58,10 @@ const iconMap = {
 }
 
 const colorMap = {
-  success: 'border-[#3fb950]/40 bg-[#3fb950]/10 text-[#3fb950]',
-  error: 'border-[#f85149]/40 bg-[#f85149]/10 text-[#f85149]',
-  warning: 'border-[#d29922]/40 bg-[#d29922]/10 text-[#d29922]',
-  info: 'border-[#58a6ff]/40 bg-[#58a6ff]/10 text-[#58a6ff]',
+  success: 'border-[var(--green)]/40 bg-[var(--green)]/10 text-[var(--green)]',
+  error: 'border-[var(--red)]/40 bg-[var(--red)]/10 text-[var(--red)]',
+  warning: 'border-[var(--yellow)]/40 bg-[var(--yellow)]/10 text-[var(--yellow)]',
+  info: 'border-[var(--blue)]/40 bg-[var(--blue)]/10 text-[var(--blue)]',
 }
 
 function ToastItem({ item, onClose }: { item: ToastItem; onClose: () => void }) {
@@ -83,7 +83,7 @@ function ToastItem({ item, onClose }: { item: ToastItem; onClose: () => void }) 
       )}
     >
       <Icon size={16} className="shrink-0" />
-      <span className="flex-1 text-sm text-[#e6edf3]">{item.message}</span>
+      <span className="flex-1 text-sm text-[var(--text-primary)]">{item.message}</span>
       <button onClick={onClose} className="shrink-0 p-0.5 hover:bg-white/10 rounded">
         <X size={14} />
       </button>
