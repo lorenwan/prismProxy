@@ -29,38 +29,56 @@ export default function EnvironmentsPage() {
   }
 
   async function handleSave() {
-    const validVars = variables.filter((v) => v.key.trim())
-    const envData = { name: editingName, variables: validVars }
+    try {
+      const validVars = variables.filter((v) => v.key.trim())
+      const envData = { name: editingName, variables: validVars }
 
-    if (isNew) {
-      const created = await createEnvironment(envData)
-      setEnvironments([...environments, created])
-      setSelected(created)
-      setIsNew(false)
-    } else if (selected) {
-      const updated = await updateEnvironment(selected.id, envData)
-      setEnvironments(environments.map((e) => (e.id === selected.id ? updated : e)))
-      setSelected(updated)
+      if (isNew) {
+        const created = await createEnvironment(envData)
+        setEnvironments([...environments, created])
+        setSelected(created)
+        setIsNew(false)
+      } else if (selected) {
+        const updated = await updateEnvironment(selected.id, envData)
+        setEnvironments(environments.map((e) => (e.id === selected.id ? updated : e)))
+        setSelected(updated)
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '保存环境失败'
+      console.error('保存环境失败:', err)
+      alert(message)
     }
   }
 
   async function handleDelete(env: Environment) {
-    await deleteEnvironment(env.id)
-    setEnvironments(environments.filter((e) => e.id !== env.id))
-    if (selected?.id === env.id) {
-      setSelected(null)
-      setEditingName('')
-      setVariables([])
-      setIsNew(false)
+    try {
+      await deleteEnvironment(env.id)
+      setEnvironments(environments.filter((e) => e.id !== env.id))
+      if (selected?.id === env.id) {
+        setSelected(null)
+        setEditingName('')
+        setVariables([])
+        setIsNew(false)
+      }
+      setDeleteConfirm(null)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '删除环境失败'
+      console.error('删除环境失败:', err)
+      alert(message)
     }
-    setDeleteConfirm(null)
   }
 
   async function handleActivate(env: Environment) {
-    await activateEnvironment(env.id)
-    setEnvironments(environments.map((e) => ({ ...e, active: e.id === env.id })))
-    if (selected?.id === env.id) {
-      setSelected({ ...selected, active: true })
+    try {
+      await activateEnvironment(env.id)
+      setEnvironments(environments.map((e) => ({ ...e, active: e.id === env.id })))
+      if (selected?.id === env.id) {
+        setSelected({ ...selected, active: true })
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '激活环境失败'
+      console.error('激活环境失败:', err)
+      alert(message)
     }
   }
 
@@ -83,7 +101,7 @@ export default function EnvironmentsPage() {
       {/* 左侧环境列表 */}
       <div className="w-72 border-r border-[var(--border)] flex flex-col bg-[var(--bg-inset)]">
         <div className="flex items-center gap-1 p-2 border-b border-[var(--border)]">
-          <button onClick={handleNew} className="px-2 py-1 text-xs bg-[var(--blue)] text-white rounded hover:bg-[var(--blue)]/90">
+          <button onClick={handleNew} className="px-2 py-1 text-xs bg-[var(--blue)] text-white rounded hover:bg-[var(--blue)]/90" aria-label="新增环境">
             新增环境
           </button>
         </div>
@@ -106,6 +124,7 @@ export default function EnvironmentsPage() {
                 <button
                   onClick={(e) => { e.stopPropagation(); handleActivate(env) }}
                   className="px-1.5 py-0.5 text-xs bg-[var(--hover-bg)] rounded hover:bg-[var(--hover-bg)]"
+                  aria-label={`激活环境 ${env.name}`}
                 >
                   激活
                 </button>
@@ -125,12 +144,14 @@ export default function EnvironmentsPage() {
             <h2 className="text-lg font-semibold">{isNew ? '新增环境' : '编辑环境'}</h2>
 
             <div>
-              <label className="block text-sm text-[var(--text-tertiary)] mb-1">环境名称</label>
+              <label htmlFor="env-name" className="block text-sm text-[var(--text-tertiary)] mb-1">环境名称</label>
               <input
+                id="env-name"
                 value={editingName}
                 onChange={(e) => setEditingName(e.target.value)}
                 className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                 placeholder="如：开发环境、测试环境、生产环境"
+                aria-label="环境名称"
               />
             </div>
 
@@ -138,7 +159,7 @@ export default function EnvironmentsPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-medium text-[var(--blue)]">环境变量</h3>
-                <button onClick={addVariable} className="text-xs text-[var(--text-tertiary)] hover:text-[var(--blue)]">+ 添加变量</button>
+                <button onClick={addVariable} className="text-xs text-[var(--text-tertiary)] hover:text-[var(--blue)]" aria-label="添加变量">+ 添加变量</button>
               </div>
 
               <div className="border border-[var(--border)] rounded overflow-hidden">
@@ -158,20 +179,23 @@ export default function EnvironmentsPage() {
                       checked={v.enabled}
                       onChange={(e) => updateVariable(i, 'enabled', e.target.checked)}
                       className="w-4 h-4 accent-[var(--blue)]"
+                      aria-label={`启用变量 ${v.key || i + 1}`}
                     />
                     <input
                       value={v.key}
                       onChange={(e) => updateVariable(i, 'key', e.target.value)}
                       className="flex-1 px-2 py-1 bg-transparent text-sm font-mono focus:outline-none"
                       placeholder="variable_name"
+                      aria-label={`变量 ${i + 1} 名称`}
                     />
                     <input
                       value={v.value}
                       onChange={(e) => updateVariable(i, 'value', e.target.value)}
                       className="flex-1 px-2 py-1 bg-transparent text-sm font-mono focus:outline-none"
                       placeholder="value"
+                      aria-label={`变量 ${i + 1} 值`}
                     />
-                    <button onClick={() => removeVariable(i)} className="text-xs text-[var(--red)] hover:text-[#ff9eaf] px-1">✕</button>
+                    <button onClick={() => removeVariable(i)} className="text-xs text-[var(--red)] hover:text-[var(--red)]/90 px-1" aria-label={`删除变量 ${i + 1}`}>✕</button>
                   </div>
                 ))}
 
@@ -193,15 +217,15 @@ export default function EnvironmentsPage() {
 
             {/* 操作按钮 */}
             <div className="flex gap-2 pt-2">
-              <button onClick={handleSave} className="px-4 py-2 bg-[var(--blue)] text-white rounded text-sm hover:bg-[var(--blue)]/90">
+              <button onClick={handleSave} className="px-4 py-2 bg-[var(--blue)] text-white rounded text-sm hover:bg-[var(--blue)]/90" aria-label="保存环境">
                 保存
               </button>
               {!isNew && selected && (
                 <>
-                  <button onClick={() => handleActivate(selected)} className="px-4 py-2 bg-[var(--green)] text-white rounded text-sm hover:bg-[#a9d882]">
+                  <button onClick={() => handleActivate(selected)} className="px-4 py-2 bg-[var(--green)] text-white rounded text-sm hover:bg-[var(--green)]/90" aria-label="激活环境">
                     激活
                   </button>
-                  <button onClick={() => setDeleteConfirm(selected)} className="px-4 py-2 bg-[var(--red)] text-white rounded text-sm hover:bg-[var(--red)]/90">
+                  <button onClick={() => setDeleteConfirm(selected)} className="px-4 py-2 bg-[var(--red)] text-white rounded text-sm hover:bg-[var(--red)]/90" aria-label="删除环境">
                     删除
                   </button>
                 </>
@@ -222,8 +246,8 @@ export default function EnvironmentsPage() {
             <h3 className="text-base font-semibold mb-2">确认删除</h3>
             <p className="text-sm text-[var(--text-tertiary)] mb-4">确定要删除环境 "{deleteConfirm.name}" 吗？此操作不可撤销。</p>
             <div className="flex gap-2 justify-end">
-              <button onClick={() => setDeleteConfirm(null)} className="px-3 py-1.5 text-sm bg-[var(--bg-inset)] rounded hover:bg-[var(--hover-bg)]">取消</button>
-              <button onClick={() => handleDelete(deleteConfirm)} className="px-3 py-1.5 text-sm bg-[var(--red)] text-white rounded hover:bg-[var(--red)]/90">删除</button>
+              <button onClick={() => setDeleteConfirm(null)} className="px-3 py-1.5 text-sm bg-[var(--bg-inset)] rounded hover:bg-[var(--hover-bg)]" aria-label="取消删除">取消</button>
+              <button onClick={() => handleDelete(deleteConfirm)} className="px-3 py-1.5 text-sm bg-[var(--red)] text-white rounded hover:bg-[var(--red)]/90" aria-label="确认删除">删除</button>
             </div>
           </div>
         </div>

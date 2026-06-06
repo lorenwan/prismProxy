@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Wifi, WifiOff, Globe, Clock, Server } from 'lucide-react'
+import { Globe, Clock, Server } from 'lucide-react'
 import { useTrafficStore } from '../../features/traffic/trafficStore'
 import { getTrafficStats } from '../../features/traffic/trafficService'
-import { useWebSocket } from '../../hooks/useWebSocket'
 import type { TrafficStats } from '../../types'
 
 export default function StatusBar() {
   const { trafficList } = useTrafficStore()
-  const { status: wsStatus } = useWebSocket()
   const [stats, setStats] = useState<TrafficStats | null>(null)
 
   useEffect(() => {
@@ -24,23 +22,8 @@ export default function StatusBar() {
     return () => clearInterval(timer)
   }, [])
 
-  const wsIcon = wsStatus === 'connected' ? <Wifi size={12} /> : <WifiOff size={12} />
-  const wsColor = wsStatus === 'connected'
-    ? 'text-[var(--green)]'
-    : wsStatus === 'connecting'
-      ? 'text-[var(--yellow)]'
-      : 'text-[var(--red)]'
-
   return (
     <footer className="h-6 bg-[var(--bg-secondary)] border-t border-[var(--border)] flex items-center px-3 text-[11px] text-[var(--text-secondary)] shrink-0 select-none">
-      {/* WebSocket 状态 */}
-      <div className={`flex items-center gap-1 ${wsColor}`}>
-        {wsIcon}
-        <span>{wsStatus === 'connected' ? '已连接' : wsStatus === 'connecting' ? '连接中...' : '未连接'}</span>
-      </div>
-
-      <span className="mx-3 text-[var(--border)]">|</span>
-
       {/* 流量统计 */}
       <div className="flex items-center gap-1">
         <Globe size={12} />

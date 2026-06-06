@@ -80,32 +80,48 @@ export default function ScriptsPage() {
   }
 
   async function handleSave() {
-    if (isNew) {
-      const created = await createScript(editing)
-      setScripts([...scripts, created])
-      setSelected(created)
-      setIsNew(false)
-    } else if (selected) {
-      const updated = await updateScript(selected.id, editing)
-      setScripts(scripts.map((s) => (s.id === selected.id ? updated : s)))
-      setSelected(updated)
+    try {
+      if (isNew) {
+        const created = await createScript(editing)
+        setScripts([...scripts, created])
+        setSelected(created)
+        setIsNew(false)
+      } else if (selected) {
+        const updated = await updateScript(selected.id, editing)
+        setScripts(scripts.map((s) => (s.id === selected.id ? updated : s)))
+        setSelected(updated)
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '保存脚本失败'
+      console.error('保存脚本失败:', err)
+      alert(message)
     }
   }
 
   async function handleDelete(script: Script) {
-    await deleteScript(script.id)
-    setScripts(scripts.filter((s) => s.id !== script.id))
-    if (selected?.id === script.id) {
-      setSelected(null)
-      setEditing(emptyScript)
-      setIsNew(false)
+    try {
+      await deleteScript(script.id)
+      setScripts(scripts.filter((s) => s.id !== script.id))
+      if (selected?.id === script.id) {
+        setSelected(null)
+        setEditing(emptyScript)
+        setIsNew(false)
+      }
+      setDeleteConfirm(null)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '删除脚本失败'
+      console.error('删除脚本失败:', err)
+      alert(message)
     }
-    setDeleteConfirm(null)
   }
 
   async function handleToggle(script: Script) {
-    await toggleScript(script.id, !script.enabled)
-    setScripts(scripts.map((s) => (s.id === script.id ? { ...s, enabled: !s.enabled } : s)))
+    try {
+      await toggleScript(script.id, !script.enabled)
+      setScripts(scripts.map((s) => (s.id === script.id ? { ...s, enabled: !s.enabled } : s)))
+    } catch (err) {
+      console.error('切换脚本状态失败:', err)
+    }
   }
 
   async function handleTest() {
@@ -123,9 +139,13 @@ export default function ScriptsPage() {
   }
 
   async function handleBatchToggle(enabled: boolean) {
-    const ids = scripts.map((s) => s.id)
-    await batchToggleScripts(ids, enabled)
-    setScripts(scripts.map((s) => ({ ...s, enabled })))
+    try {
+      const ids = scripts.map((s) => s.id)
+      await batchToggleScripts(ids, enabled)
+      setScripts(scripts.map((s) => ({ ...s, enabled })))
+    } catch (err) {
+      console.error('批量操作失败:', err)
+    }
   }
 
   function useTemplate(template: typeof scriptTemplates[0]) {
@@ -143,13 +163,13 @@ export default function ScriptsPage() {
       {/* 左侧脚本列表 */}
       <div className="w-72 border-r border-[var(--border)] flex flex-col bg-[var(--bg-inset)]">
         <div className="flex items-center gap-1 p-2 border-b border-[var(--border)]">
-          <button onClick={handleNew} className="px-2 py-1 text-xs bg-[var(--blue)] text-white rounded hover:bg-[var(--blue)]/90">
+          <button onClick={handleNew} className="px-2 py-1 text-xs bg-[var(--blue)] text-white rounded hover:bg-[var(--blue)]/90" aria-label="新增脚本">
             新增
           </button>
-          <button onClick={() => handleBatchToggle(true)} className="px-2 py-1 text-xs bg-[var(--hover-bg)] rounded hover:bg-[var(--hover-bg)]">
+          <button onClick={() => handleBatchToggle(true)} className="px-2 py-1 text-xs bg-[var(--hover-bg)] rounded hover:bg-[var(--hover-bg)]" aria-label="全部启用脚本">
             全部启用
           </button>
-          <button onClick={() => handleBatchToggle(false)} className="px-2 py-1 text-xs bg-[var(--hover-bg)] rounded hover:bg-[var(--hover-bg)]">
+          <button onClick={() => handleBatchToggle(false)} className="px-2 py-1 text-xs bg-[var(--hover-bg)] rounded hover:bg-[var(--hover-bg)]" aria-label="全部禁用脚本">
             全部禁用
           </button>
         </div>
@@ -175,6 +195,9 @@ export default function ScriptsPage() {
               <button
                 onClick={(e) => { e.stopPropagation(); handleToggle(script) }}
                 className={`w-8 h-4 rounded-full transition-colors ${script.enabled ? 'bg-[var(--green)]' : 'bg-[var(--border)]'}`}
+                role="switch"
+                aria-checked={script.enabled}
+                aria-label={script.enabled ? '禁用脚本' : '启用脚本'}
               >
                 <div className={`w-3 h-3 rounded-full bg-white transition-transform ${script.enabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
               </button>
@@ -221,20 +244,24 @@ export default function ScriptsPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-[var(--text-tertiary)] mb-1">脚本名称</label>
+                <label htmlFor="script-name" className="block text-sm text-[var(--text-tertiary)] mb-1">脚本名称</label>
                 <input
+                  id="script-name"
                   value={editing.name || ''}
                   onChange={(e) => setEditing({ ...editing, name: e.target.value })}
                   className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                   placeholder="输入脚本名称"
+                  aria-label="脚本名称"
                 />
               </div>
               <div>
-                <label className="block text-sm text-[var(--text-tertiary)] mb-1">触发阶段</label>
+                <label htmlFor="script-trigger" className="block text-sm text-[var(--text-tertiary)] mb-1">触发阶段</label>
                 <select
+                  id="script-trigger"
                   value={editing.trigger || 'request'}
                   onChange={(e) => setEditing({ ...editing, trigger: e.target.value as Script['trigger'] })}
                   className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
+                  aria-label="触发阶段"
                 >
                   {triggers.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
@@ -243,21 +270,25 @@ export default function ScriptsPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-[var(--text-tertiary)] mb-1">优先级</label>
+                <label htmlFor="script-priority" className="block text-sm text-[var(--text-tertiary)] mb-1">优先级</label>
                 <input
+                  id="script-priority"
                   type="number"
                   value={editing.priority || 0}
                   onChange={(e) => setEditing({ ...editing, priority: Number(e.target.value) })}
                   className="w-32 px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
+                  aria-label="脚本优先级"
                 />
               </div>
               <div>
-                <label className="block text-sm text-[var(--text-tertiary)] mb-1">描述</label>
+                <label htmlFor="script-desc" className="block text-sm text-[var(--text-tertiary)] mb-1">描述</label>
                 <input
+                  id="script-desc"
                   value={editing.description || ''}
                   onChange={(e) => setEditing({ ...editing, description: e.target.value })}
                   className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                   placeholder="脚本描述（可选）"
+                  aria-label="脚本描述"
                 />
               </div>
             </div>
@@ -265,21 +296,23 @@ export default function ScriptsPage() {
             {/* 代码编辑器 */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-sm text-[var(--text-tertiary)]">脚本代码</label>
+                <label htmlFor="script-code" className="text-sm text-[var(--text-tertiary)]">脚本代码</label>
                 <span className="text-xs text-[var(--text-tertiary)]">JavaScript</span>
               </div>
               <textarea
+                id="script-code"
                 value={editing.code || ''}
                 onChange={(e) => setEditing({ ...editing, code: e.target.value })}
                 className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm font-mono h-64 resize-none focus:border-[var(--blue)] focus:outline-none"
                 placeholder="// 编写脚本代码&#10;// request: 请求对象&#10;// response: 响应对象&#10;// console.log(): 日志输出"
                 spellCheck={false}
+                aria-label="脚本代码"
               />
             </div>
 
             {/* 操作按钮 */}
             <div className="flex gap-2 pt-2">
-              <button onClick={handleSave} className="px-4 py-2 bg-[var(--blue)] text-white rounded text-sm hover:bg-[var(--blue)]/90">
+              <button onClick={handleSave} className="px-4 py-2 bg-[var(--blue)] text-white rounded text-sm hover:bg-[var(--blue)]/90" aria-label="保存脚本">
                 保存
               </button>
               {!isNew && selected && (
@@ -288,10 +321,11 @@ export default function ScriptsPage() {
                     onClick={handleTest}
                     disabled={testing}
                     className="px-4 py-2 bg-[var(--yellow)] text-white rounded text-sm hover:bg-[var(--yellow)]/90 disabled:opacity-50"
+                    aria-label="测试脚本"
                   >
                     {testing ? '测试中...' : '测试脚本'}
                   </button>
-                  <button onClick={() => setDeleteConfirm(selected)} className="px-4 py-2 bg-[var(--red)] text-white rounded text-sm hover:bg-[var(--red)]/90">
+                  <button onClick={() => setDeleteConfirm(selected)} className="px-4 py-2 bg-[var(--red)] text-white rounded text-sm hover:bg-[var(--red)]/90" aria-label="删除脚本">
                     删除
                   </button>
                 </>
@@ -305,7 +339,7 @@ export default function ScriptsPage() {
                 {testResult.error ? (
                   <pre className="text-xs font-mono text-[var(--red)] whitespace-pre-wrap">{testResult.error}</pre>
                 ) : (
-                  <pre className="text-xs font-mono text-[#e6edf3] whitespace-pre-wrap">{testResult.output || '（无输出）'}</pre>
+                  <pre className="text-xs font-mono text-[var(--text-primary)] whitespace-pre-wrap">{testResult.output || '（无输出）'}</pre>
                 )}
               </div>
             )}
@@ -320,8 +354,8 @@ export default function ScriptsPage() {
             <h3 className="text-base font-semibold mb-2">确认删除</h3>
             <p className="text-sm text-[var(--text-tertiary)] mb-4">确定要删除脚本 "{deleteConfirm.name}" 吗？</p>
             <div className="flex gap-2 justify-end">
-              <button onClick={() => setDeleteConfirm(null)} className="px-3 py-1.5 text-sm bg-[var(--bg-inset)] rounded hover:bg-[var(--hover-bg)]">取消</button>
-              <button onClick={() => handleDelete(deleteConfirm)} className="px-3 py-1.5 text-sm bg-[var(--red)] text-white rounded hover:bg-[var(--red)]/90">删除</button>
+              <button onClick={() => setDeleteConfirm(null)} className="px-3 py-1.5 text-sm bg-[var(--bg-inset)] rounded hover:bg-[var(--hover-bg)]" aria-label="取消删除">取消</button>
+              <button onClick={() => handleDelete(deleteConfirm)} className="px-3 py-1.5 text-sm bg-[var(--red)] text-white rounded hover:bg-[var(--red)]/90" aria-label="确认删除">删除</button>
             </div>
           </div>
         </div>

@@ -61,71 +61,95 @@ export default function CollectionsPage() {
   }
 
   async function handleSaveRequest() {
-    const headersObj: Record<string, string> = {}
-    headers.forEach((h) => {
-      if (h.key.trim()) headersObj[h.key.trim()] = h.value
-    })
+    try {
+      const headersObj: Record<string, string> = {}
+      headers.forEach((h) => {
+        if (h.key.trim()) headersObj[h.key.trim()] = h.value
+      })
 
-    const reqData = { ...editingRequest, headers: headersObj }
+      const reqData = { ...editingRequest, headers: headersObj }
 
-    if (isNewRequest && selectedCollection) {
-      const created = await addRequest(selectedCollection.id, reqData)
-      const updatedCollections = collections.map((c) =>
-        c.id === selectedCollection.id
-          ? { ...c, requests: [...c.requests, created] }
-          : c
-      )
-      setCollections(updatedCollections)
-      setSelectedCollection(updatedCollections.find((c) => c.id === selectedCollection.id) || null)
-      setSelectedRequest(created)
-      setEditingRequest(created)
-      setIsNewRequest(false)
-    } else if (selectedRequest && selectedCollection) {
-      const updated = await updateRequest(selectedCollection.id, selectedRequest.id, reqData)
-      const updatedCollections = collections.map((c) =>
-        c.id === selectedCollection.id
-          ? { ...c, requests: c.requests.map((r) => (r.id === updated.id ? updated : r)) }
-          : c
-      )
-      setCollections(updatedCollections)
-      setSelectedCollection(updatedCollections.find((c) => c.id === selectedCollection.id) || null)
-      setSelectedRequest(updated)
-      setEditingRequest(updated)
+      if (isNewRequest && selectedCollection) {
+        const created = await addRequest(selectedCollection.id, reqData)
+        const updatedCollections = collections.map((c) =>
+          c.id === selectedCollection.id
+            ? { ...c, requests: [...c.requests, created] }
+            : c
+        )
+        setCollections(updatedCollections)
+        setSelectedCollection(updatedCollections.find((c) => c.id === selectedCollection.id) || null)
+        setSelectedRequest(created)
+        setEditingRequest(created)
+        setIsNewRequest(false)
+      } else if (selectedRequest && selectedCollection) {
+        const updated = await updateRequest(selectedCollection.id, selectedRequest.id, reqData)
+        const updatedCollections = collections.map((c) =>
+          c.id === selectedCollection.id
+            ? { ...c, requests: c.requests.map((r) => (r.id === updated.id ? updated : r)) }
+            : c
+        )
+        setCollections(updatedCollections)
+        setSelectedCollection(updatedCollections.find((c) => c.id === selectedCollection.id) || null)
+        setSelectedRequest(updated)
+        setEditingRequest(updated)
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '保存请求失败'
+      console.error('保存请求失败:', err)
+      alert(message)
     }
   }
 
   async function handleDeleteRequest() {
     if (!selectedRequest || !selectedCollection) return
-    await deleteRequest(selectedCollection.id, selectedRequest.id)
-    const updatedCollections = collections.map((c) =>
-      c.id === selectedCollection.id
-        ? { ...c, requests: c.requests.filter((r) => r.id !== selectedRequest.id) }
-        : c
-    )
-    setCollections(updatedCollections)
-    setSelectedCollection(updatedCollections.find((c) => c.id === selectedCollection.id) || null)
-    setSelectedRequest(null)
-    setEditingRequest({})
-    setIsNewRequest(false)
+    try {
+      await deleteRequest(selectedCollection.id, selectedRequest.id)
+      const updatedCollections = collections.map((c) =>
+        c.id === selectedCollection.id
+          ? { ...c, requests: c.requests.filter((r) => r.id !== selectedRequest.id) }
+          : c
+      )
+      setCollections(updatedCollections)
+      setSelectedCollection(updatedCollections.find((c) => c.id === selectedCollection.id) || null)
+      setSelectedRequest(null)
+      setEditingRequest({})
+      setIsNewRequest(false)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '删除请求失败'
+      console.error('删除请求失败:', err)
+      alert(message)
+    }
   }
 
   async function handleNewCollection() {
     if (!newCollectionName.trim()) return
-    const created = await createCollection({ name: newCollectionName.trim() })
-    setCollections([...collections, created])
-    setSelectedCollection(created)
-    setNewCollectionName('')
-    setShowNewCollection(false)
+    try {
+      const created = await createCollection({ name: newCollectionName.trim() })
+      setCollections([...collections, created])
+      setSelectedCollection(created)
+      setNewCollectionName('')
+      setShowNewCollection(false)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '创建集合失败'
+      console.error('创建集合失败:', err)
+      alert(message)
+    }
   }
 
   async function handleDeleteCollection(id: string) {
-    await deleteCollection(id)
-    const filtered = collections.filter((c) => c.id !== id)
-    setCollections(filtered)
-    if (selectedCollection?.id === id) {
-      setSelectedCollection(filtered[0] || null)
-      setSelectedRequest(null)
-      setEditingRequest({})
+    try {
+      await deleteCollection(id)
+      const filtered = collections.filter((c) => c.id !== id)
+      setCollections(filtered)
+      if (selectedCollection?.id === id) {
+        setSelectedCollection(filtered[0] || null)
+        setSelectedRequest(null)
+        setEditingRequest({})
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '删除集合失败'
+      console.error('删除集合失败:', err)
+      alert(message)
     }
   }
 
@@ -194,10 +218,10 @@ export default function CollectionsPage() {
       {/* 左侧集合树 */}
       <div className="w-72 border-r border-[var(--border)] flex flex-col bg-[var(--bg-inset)]">
         <div className="flex items-center gap-1 p-2 border-b border-[var(--border)]">
-          <button onClick={() => setShowNewCollection(true)} className="px-2 py-1 text-xs bg-[var(--blue)] text-white rounded hover:bg-[var(--blue)]/90">
+          <button onClick={() => setShowNewCollection(true)} className="px-2 py-1 text-xs bg-[var(--blue)] text-white rounded hover:bg-[var(--blue)]/90" aria-label="新建集合">
             新建集合
           </button>
-          <button onClick={handleImport} className="px-2 py-1 text-xs bg-[var(--hover-bg)] rounded hover:bg-[var(--hover-bg)]">
+          <button onClick={handleImport} className="px-2 py-1 text-xs bg-[var(--hover-bg)] rounded hover:bg-[var(--hover-bg)]" aria-label="导入集合">
             导入
           </button>
           <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleFileImport} />
@@ -212,8 +236,9 @@ export default function CollectionsPage() {
               placeholder="集合名称"
               onKeyDown={(e) => e.key === 'Enter' && handleNewCollection()}
               autoFocus
+              aria-label="集合名称"
             />
-            <button onClick={handleNewCollection} className="px-2 py-1 text-xs bg-[var(--green)] text-white rounded">OK</button>
+            <button onClick={handleNewCollection} className="px-2 py-1 text-xs bg-[var(--green)] text-white rounded" aria-label="确认创建集合">OK</button>
           </div>
         )}
 
@@ -231,7 +256,8 @@ export default function CollectionsPage() {
                 <span className="text-xs text-[var(--text-tertiary)]">{col.requests?.length || 0}</span>
                 <button
                   onClick={(e) => { e.stopPropagation(); handleDeleteCollection(col.id) }}
-                  className="text-xs text-[var(--red)] hover:text-[#ff9eaf] opacity-0 group-hover:opacity-100"
+                  className="text-xs text-[var(--red)] hover:text-[var(--red)]/90 opacity-0 group-hover:opacity-100"
+                  aria-label={`删除集合 ${col.name}`}
                 >
                   ✕
                 </button>
@@ -281,6 +307,7 @@ export default function CollectionsPage() {
                   value={editingRequest.method || 'GET'}
                   onChange={(e) => setEditingRequest({ ...editingRequest, method: e.target.value })}
                   className="px-2 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm font-mono focus:border-[var(--blue)] focus:outline-none"
+                  aria-label="请求方法"
                 >
                   {methods.map((m) => <option key={m} value={m}>{m}</option>)}
                 </select>
@@ -289,19 +316,21 @@ export default function CollectionsPage() {
                   onChange={(e) => setEditingRequest({ ...editingRequest, url: e.target.value })}
                   className="flex-1 px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm font-mono focus:border-[var(--blue)] focus:outline-none"
                   placeholder="输入请求 URL，支持 {{variable}} 变量"
+                  aria-label="请求 URL"
                 />
                 <button
                   onClick={handleSend}
                   disabled={sending || !editingRequest.url}
-                  className="px-4 py-2 bg-[var(--green)] text-white rounded text-sm hover:bg-[#a9d882] disabled:opacity-50"
+                  className="px-4 py-2 bg-[var(--green)] text-white rounded text-sm hover:bg-[var(--green)]/90 disabled:opacity-50"
+                  aria-label="发送请求"
                 >
                   {sending ? '发送中...' : '发送'}
                 </button>
-                <button onClick={handleSaveRequest} className="px-4 py-2 bg-[var(--blue)] text-white rounded text-sm hover:bg-[var(--blue)]/90">
+                <button onClick={handleSaveRequest} className="px-4 py-2 bg-[var(--blue)] text-white rounded text-sm hover:bg-[var(--blue)]/90" aria-label="保存请求">
                   保存
                 </button>
                 {!isNewRequest && selectedRequest && (
-                  <button onClick={handleDeleteRequest} className="px-3 py-2 bg-[var(--red)] text-white rounded text-sm hover:bg-[var(--red)]/90">
+                  <button onClick={handleDeleteRequest} className="px-3 py-2 bg-[var(--red)] text-white rounded text-sm hover:bg-[var(--red)]/90" aria-label="删除请求">
                     删除
                   </button>
                 )}
@@ -312,6 +341,7 @@ export default function CollectionsPage() {
                 onChange={(e) => setEditingRequest({ ...editingRequest, name: e.target.value })}
                 className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                 placeholder="请求名称"
+                aria-label="请求名称"
               />
             </div>
 
@@ -321,7 +351,7 @@ export default function CollectionsPage() {
               <div className="w-1/2 border-r border-[var(--border)] flex flex-col overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--border)]">
                   <span className="text-xs font-medium text-[var(--blue)]">Headers</span>
-                  <button onClick={addHeaderRow} className="text-xs text-[var(--text-tertiary)] hover:text-[var(--blue)]">+ 添加</button>
+                  <button onClick={addHeaderRow} className="text-xs text-[var(--text-tertiary)] hover:text-[var(--blue)]" aria-label="添加 Header">+ 添加</button>
                 </div>
                 <div className="flex-1 overflow-y-auto">
                   {headers.map((h, i) => (
@@ -331,14 +361,16 @@ export default function CollectionsPage() {
                         onChange={(e) => updateHeader(i, 'key', e.target.value)}
                         className="flex-1 px-2 py-1 bg-transparent text-xs font-mono focus:outline-none"
                         placeholder="Key"
+                        aria-label={`Header ${i + 1} 名称`}
                       />
                       <input
                         value={h.value}
                         onChange={(e) => updateHeader(i, 'value', e.target.value)}
                         className="flex-1 px-2 py-1 bg-transparent text-xs font-mono focus:outline-none"
                         placeholder="Value"
+                        aria-label={`Header ${i + 1} 值`}
                       />
-                      <button onClick={() => removeHeaderRow(i)} className="text-xs text-[var(--red)] hover:text-[#ff9eaf] px-1">✕</button>
+                      <button onClick={() => removeHeaderRow(i)} className="text-xs text-[var(--red)] hover:text-[var(--red)]/90 px-1" aria-label={`删除 Header ${i + 1}`}>✕</button>
                     </div>
                   ))}
                 </div>
@@ -353,6 +385,7 @@ export default function CollectionsPage() {
                     onChange={(e) => setEditingRequest({ ...editingRequest, body: e.target.value })}
                     className="flex-1 px-3 py-2 bg-[var(--bg-inset)] text-xs font-mono resize-none focus:outline-none"
                     placeholder='{"key": "value"}'
+                    aria-label="请求 Body"
                   />
                 </div>
               </div>

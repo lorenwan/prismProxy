@@ -148,46 +148,66 @@ export default function RulesPage() {
 
   // 保存规则
   async function handleSave() {
-    const ruleData: Partial<Rule> = {
-      name: editing.name,
-      enabled: editing.enabled,
-      priority: editing.priority,
-      match: formToRuleMatch(editing),
-      action: formToRuleAction(editing),
-    }
-    if (isNew) {
-      const created = await createRule(ruleData)
-      setRules([...rules, created])
-      setSelected(created)
-      setIsNew(false)
-    } else if (selected) {
-      const updated = await updateRule(selected.id, ruleData)
-      setRules(rules.map((r) => (r.id === selected.id ? updated : r)))
-      setSelected(updated)
+    try {
+      const ruleData: Partial<Rule> = {
+        name: editing.name,
+        enabled: editing.enabled,
+        priority: editing.priority,
+        match: formToRuleMatch(editing),
+        action: formToRuleAction(editing),
+      }
+      if (isNew) {
+        const created = await createRule(ruleData)
+        setRules([...rules, created])
+        setSelected(created)
+        setIsNew(false)
+      } else if (selected) {
+        const updated = await updateRule(selected.id, ruleData)
+        setRules(rules.map((r) => (r.id === selected.id ? updated : r)))
+        setSelected(updated)
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '保存规则失败'
+      console.error('保存规则失败:', err)
+      alert(message)
     }
   }
 
   // 删除规则
   async function handleDelete() {
     if (!selected) return
-    await deleteRule(selected.id)
-    setRules(rules.filter((r) => r.id !== selected.id))
-    setSelected(null)
-    setEditing(emptyForm)
-    setIsNew(false)
+    try {
+      await deleteRule(selected.id)
+      setRules(rules.filter((r) => r.id !== selected.id))
+      setSelected(null)
+      setEditing(emptyForm)
+      setIsNew(false)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '删除规则失败'
+      console.error('删除规则失败:', err)
+      alert(message)
+    }
   }
 
   // 切换启用
   async function handleToggle(rule: Rule) {
-    await toggleRule(rule.id, !rule.enabled)
-    setRules(rules.map((r) => (r.id === rule.id ? { ...r, enabled: !r.enabled } : r)))
+    try {
+      await toggleRule(rule.id, !rule.enabled)
+      setRules(rules.map((r) => (r.id === rule.id ? { ...r, enabled: !r.enabled } : r)))
+    } catch (err) {
+      console.error('切换规则状态失败:', err)
+    }
   }
 
   // 批量操作
   async function handleBatchToggle(enabled: boolean) {
-    const ids = rules.map((r) => r.id)
-    await batchToggleRules(ids, enabled)
-    setRules(rules.map((r) => ({ ...r, enabled })))
+    try {
+      const ids = rules.map((r) => r.id)
+      await batchToggleRules(ids, enabled)
+      setRules(rules.map((r) => ({ ...r, enabled })))
+    } catch (err) {
+      console.error('批量操作失败:', err)
+    }
   }
 
   return (
@@ -196,13 +216,13 @@ export default function RulesPage() {
       <div className="w-80 border-r border-[var(--border)] flex flex-col bg-[var(--bg-inset)]">
         {/* 工具栏 */}
         <div className="flex items-center gap-1 p-2 border-b border-[var(--border)]">
-          <button onClick={handleNew} className="px-2 py-1 text-xs bg-[var(--blue)] text-white rounded hover:bg-[var(--blue)]/90">
+          <button onClick={handleNew} className="px-2 py-1 text-xs bg-[var(--blue)] text-white rounded hover:bg-[var(--blue)]/90" aria-label="新增规则">
             新增
           </button>
-          <button onClick={() => handleBatchToggle(true)} className="px-2 py-1 text-xs bg-[var(--hover-bg)] rounded hover:bg-[var(--hover-bg)]">
+          <button onClick={() => handleBatchToggle(true)} className="px-2 py-1 text-xs bg-[var(--hover-bg)] rounded hover:bg-[var(--hover-bg)]" aria-label="全部启用规则">
             全部启用
           </button>
-          <button onClick={() => handleBatchToggle(false)} className="px-2 py-1 text-xs bg-[var(--hover-bg)] rounded hover:bg-[var(--hover-bg)]">
+          <button onClick={() => handleBatchToggle(false)} className="px-2 py-1 text-xs bg-[var(--hover-bg)] rounded hover:bg-[var(--hover-bg)]" aria-label="全部禁用规则">
             全部禁用
           </button>
         </div>
@@ -240,6 +260,9 @@ export default function RulesPage() {
                 className={`w-8 h-4 rounded-full transition-colors ${
                   rule.enabled ? 'bg-[var(--green)]' : 'bg-[var(--border)]'
                 }`}
+                role="switch"
+                aria-checked={rule.enabled}
+                aria-label={rule.enabled ? '禁用规则' : '启用规则'}
               >
                 <div
                   className={`w-3 h-3 rounded-full bg-white transition-transform ${
@@ -262,23 +285,27 @@ export default function RulesPage() {
 
           {/* 名称 */}
           <div>
-            <label className="block text-sm text-[var(--text-tertiary)] mb-1">规则名称</label>
+            <label htmlFor="rule-name" className="block text-sm text-[var(--text-tertiary)] mb-1">规则名称</label>
             <input
+              id="rule-name"
               value={editing.name || ''}
               onChange={(e) => setEditing({ ...editing, name: e.target.value })}
               className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
               placeholder="输入规则名称"
+              aria-label="规则名称"
             />
           </div>
 
           {/* 优先级 */}
           <div>
-            <label className="block text-sm text-[var(--text-tertiary)] mb-1">优先级</label>
+            <label htmlFor="rule-priority" className="block text-sm text-[var(--text-tertiary)] mb-1">优先级</label>
             <input
+              id="rule-priority"
               type="number"
               value={editing.priority || 0}
               onChange={(e) => setEditing({ ...editing, priority: Number(e.target.value) })}
               className="w-32 px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
+              aria-label="规则优先级"
             />
           </div>
 
@@ -290,6 +317,7 @@ export default function RulesPage() {
                 value={editing.matchType || 'host'}
                 onChange={(e) => setEditing({ ...editing, matchType: e.target.value })}
                 className="px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
+                aria-label="匹配类型"
               >
                 {matchTypes.map((t) => (
                   <option key={t.value} value={t.value}>{t.label}</option>
@@ -300,6 +328,7 @@ export default function RulesPage() {
                 onChange={(e) => setEditing({ ...editing, matchValue: e.target.value })}
                 className="flex-1 px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                 placeholder="匹配值（支持正则）"
+                aria-label="匹配值"
               />
             </div>
           </div>
@@ -311,6 +340,7 @@ export default function RulesPage() {
               value={editing.actionType || 'block'}
               onChange={(e) => setEditing({ ...editing, actionType: e.target.value })}
               className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
+              aria-label="动作类型"
             >
               {actionTypes.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
@@ -320,6 +350,7 @@ export default function RulesPage() {
               value={editing.actionValue || ''}
               onChange={(e) => setEditing({ ...editing, actionValue: e.target.value })}
               className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm h-32 resize-none focus:border-[var(--blue)] focus:outline-none"
+              aria-label="动作参数"
               placeholder={
                 editing.actionType === 'redirect' ? '重定向 URL' :
                 editing.actionType === 'block' ? '拦截响应内容 (JSON)' :
@@ -332,11 +363,11 @@ export default function RulesPage() {
 
           {/* 操作按钮 */}
           <div className="flex gap-2 pt-2">
-            <button onClick={handleSave} className="px-4 py-2 bg-[var(--blue)] text-white rounded text-sm hover:bg-[var(--blue)]/90">
+            <button onClick={handleSave} className="px-4 py-2 bg-[var(--blue)] text-white rounded text-sm hover:bg-[var(--blue)]/90" aria-label="保存规则">
               保存
             </button>
             {!isNew && (
-              <button onClick={handleDelete} className="px-4 py-2 bg-[var(--red)] text-white rounded text-sm hover:bg-[var(--red)]/90">
+              <button onClick={handleDelete} className="px-4 py-2 bg-[var(--red)] text-white rounded text-sm hover:bg-[var(--red)]/90" aria-label="删除规则">
                 删除
               </button>
             )}

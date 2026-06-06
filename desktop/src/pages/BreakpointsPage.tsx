@@ -95,45 +95,67 @@ export default function BreakpointsPage() {
 
   // 保存
   async function handleSave() {
-    const bpData: Partial<Breakpoint> = {
-      name: editing.name,
-      enabled: editing.enabled,
-      phase: editing.phase,
-      match: formToMatch(editing),
-      action: { type: 'pause' },
-    }
-    if (isNew) {
-      const created = await createBreakpoint(bpData)
-      setBreakpoints([...breakpoints, created])
-      setSelected(created)
-      setIsNew(false)
-    } else if (selected) {
-      const updated = await updateBreakpoint(selected.id, bpData)
-      setBreakpoints(breakpoints.map((b) => (b.id === selected.id ? updated : b)))
-      setSelected(updated)
+    try {
+      const bpData: Partial<Breakpoint> = {
+        name: editing.name,
+        enabled: editing.enabled,
+        phase: editing.phase,
+        match: formToMatch(editing),
+        action: { type: 'pause' },
+      }
+      if (isNew) {
+        const created = await createBreakpoint(bpData)
+        setBreakpoints([...breakpoints, created])
+        setSelected(created)
+        setIsNew(false)
+      } else if (selected) {
+        const updated = await updateBreakpoint(selected.id, bpData)
+        setBreakpoints(breakpoints.map((b) => (b.id === selected.id ? updated : b)))
+        setSelected(updated)
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '保存断点失败'
+      console.error('保存断点失败:', err)
+      alert(message)
     }
   }
 
   // 删除
   async function handleDelete() {
     if (!selected) return
-    await deleteBreakpoint(selected.id)
-    setBreakpoints(breakpoints.filter((b) => b.id !== selected.id))
-    setSelected(null)
-    setEditing(emptyForm)
-    setIsNew(false)
+    try {
+      await deleteBreakpoint(selected.id)
+      setBreakpoints(breakpoints.filter((b) => b.id !== selected.id))
+      setSelected(null)
+      setEditing(emptyForm)
+      setIsNew(false)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '删除断点失败'
+      console.error('删除断点失败:', err)
+      alert(message)
+    }
   }
 
   // 切换启用
   async function handleToggle(bp: Breakpoint) {
-    await toggleBreakpoint(bp.id, !bp.enabled)
-    setBreakpoints(breakpoints.map((b) => (b.id === bp.id ? { ...b, enabled: !b.enabled } : b)))
+    try {
+      await toggleBreakpoint(bp.id, !bp.enabled)
+      setBreakpoints(breakpoints.map((b) => (b.id === bp.id ? { ...b, enabled: !b.enabled } : b)))
+    } catch (err) {
+      console.error('切换断点状态失败:', err)
+    }
   }
 
   // 恢复会话
   async function handleResume(sessionId: string) {
-    await resumeSession(sessionId)
-    setSessions(sessions.filter((s) => s.id !== sessionId))
+    try {
+      await resumeSession(sessionId)
+      setSessions(sessions.filter((s) => s.id !== sessionId))
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '恢复会话失败'
+      console.error('恢复会话失败:', err)
+      alert(message)
+    }
   }
 
   return (
@@ -142,7 +164,7 @@ export default function BreakpointsPage() {
       <div className="w-80 border-r border-[var(--border)] flex flex-col bg-[var(--bg-inset)]">
         {/* 工具栏 */}
         <div className="flex items-center gap-1 p-2 border-b border-[var(--border)]">
-          <button onClick={handleNew} className="px-2 py-1 text-xs bg-[var(--blue)] text-white rounded hover:bg-[var(--blue)]/90">
+          <button onClick={handleNew} className="px-2 py-1 text-xs bg-[var(--blue)] text-white rounded hover:bg-[var(--blue)]/90" aria-label="新增断点">
             新增
           </button>
         </div>
@@ -180,6 +202,9 @@ export default function BreakpointsPage() {
                 className={`w-8 h-4 rounded-full transition-colors ${
                   bp.enabled ? 'bg-[var(--green)]' : 'bg-[var(--border)]'
                 }`}
+                role="switch"
+                aria-checked={bp.enabled}
+                aria-label={bp.enabled ? '禁用断点' : '启用断点'}
               >
                 <div
                   className={`w-3 h-3 rounded-full bg-white transition-transform ${
@@ -204,22 +229,26 @@ export default function BreakpointsPage() {
 
             {/* 名称 */}
             <div>
-              <label className="block text-sm text-[var(--text-tertiary)] mb-1">断点名称</label>
+              <label htmlFor="bp-name" className="block text-sm text-[var(--text-tertiary)] mb-1">断点名称</label>
               <input
+                id="bp-name"
                 value={editing.name || ''}
                 onChange={(e) => setEditing({ ...editing, name: e.target.value })}
                 className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                 placeholder="输入断点名称"
+                aria-label="断点名称"
               />
             </div>
 
             {/* 阶段 */}
             <div>
-              <label className="block text-sm text-[var(--text-tertiary)] mb-1">断点阶段</label>
+              <label htmlFor="bp-phase" className="block text-sm text-[var(--text-tertiary)] mb-1">断点阶段</label>
               <select
+                id="bp-phase"
                 value={editing.phase || 'request'}
                 onChange={(e) => setEditing({ ...editing, phase: e.target.value as Breakpoint['phase'] })}
                 className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
+                aria-label="断点阶段"
               >
                 <option value="request">请求阶段</option>
                 <option value="response">响应阶段</option>
@@ -234,6 +263,7 @@ export default function BreakpointsPage() {
                   value={editing.matchType || 'path'}
                   onChange={(e) => setEditing({ ...editing, matchType: e.target.value })}
                   className="px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
+                  aria-label="匹配类型"
                 >
                   <option value="host">Host</option>
                   <option value="path">Path</option>
@@ -244,17 +274,18 @@ export default function BreakpointsPage() {
                   onChange={(e) => setEditing({ ...editing, matchValue: e.target.value })}
                   className="flex-1 px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                   placeholder="匹配值（支持正则）"
+                  aria-label="匹配值"
                 />
               </div>
             </div>
 
             {/* 操作按钮 */}
             <div className="flex gap-2 pt-2">
-              <button onClick={handleSave} className="px-4 py-2 bg-[var(--blue)] text-white rounded text-sm hover:bg-[var(--blue)]/90">
+              <button onClick={handleSave} className="px-4 py-2 bg-[var(--blue)] text-white rounded text-sm hover:bg-[var(--blue)]/90" aria-label="保存断点">
                 保存
               </button>
               {!isNew && (
-                <button onClick={handleDelete} className="px-4 py-2 bg-[var(--red)] text-white rounded text-sm hover:bg-[var(--red)]/90">
+                <button onClick={handleDelete} className="px-4 py-2 bg-[var(--red)] text-white rounded text-sm hover:bg-[var(--red)]/90" aria-label="删除断点">
                   删除
                 </button>
               )}
@@ -278,7 +309,8 @@ export default function BreakpointsPage() {
                   </div>
                   <button
                     onClick={() => handleResume(s.id)}
-                    className="px-2 py-1 text-xs bg-[var(--green)] text-white rounded hover:bg-[#73daca]"
+                    className="px-2 py-1 text-xs bg-[var(--green)] text-white rounded hover:bg-[var(--green)]/90"
+                    aria-label={`恢复会话 ${s.id.slice(0, 8)}`}
                   >
                     恢复
                   </button>

@@ -123,23 +123,25 @@ export default function DiffPage() {
           <button
             onClick={() => setMode('json')}
             className={`px-2 py-1 text-xs rounded ${mode === 'json' ? 'bg-[var(--blue)] text-white' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'}`}
+            aria-label="JSON 模式"
           >
             JSON
           </button>
           <button
             onClick={() => setMode('text')}
             className={`px-2 py-1 text-xs rounded ${mode === 'text' ? 'bg-[var(--blue)] text-white' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'}`}
+            aria-label="Text 模式"
           >
             Text
           </button>
         </div>
-        <button onClick={handleCompare} disabled={comparing} className="px-3 py-1 text-xs bg-[var(--blue)] text-white rounded hover:bg-[var(--blue)]/90 disabled:opacity-50">
+        <button onClick={handleCompare} disabled={comparing} className="px-3 py-1 text-xs bg-[var(--blue)] text-white rounded hover:bg-[var(--blue)]/90 disabled:opacity-50" aria-label="对比">
           {comparing ? '对比中...' : '对比'}
         </button>
-        <button onClick={handleSwap} className="px-3 py-1 text-xs bg-[var(--hover-bg)] border border-[var(--border)] rounded hover:bg-[var(--hover-bg)]">
+        <button onClick={handleSwap} className="px-3 py-1 text-xs bg-[var(--hover-bg)] border border-[var(--border)] rounded hover:bg-[var(--hover-bg)]" aria-label="交换左右内容">
           交换
         </button>
-        <button onClick={handleClear} className="px-3 py-1 text-xs bg-[var(--hover-bg)] border border-[var(--border)] rounded hover:bg-[var(--hover-bg)]">
+        <button onClick={handleClear} className="px-3 py-1 text-xs bg-[var(--hover-bg)] border border-[var(--border)] rounded hover:bg-[var(--hover-bg)]" aria-label="清空输入">
           清空
         </button>
         {result && (
@@ -165,6 +167,7 @@ export default function DiffPage() {
             className="flex-1 px-3 py-2 bg-[var(--bg-inset)] text-xs font-mono resize-none focus:outline-none"
             placeholder={mode === 'json' ? '{\n  "key": "value"\n}' : '输入文本内容...'}
             spellCheck={false}
+            aria-label="左侧内容（原始）"
           />
         </div>
 
@@ -177,6 +180,7 @@ export default function DiffPage() {
             className="flex-1 px-3 py-2 bg-[var(--bg-inset)] text-xs font-mono resize-none focus:outline-none"
             placeholder={mode === 'json' ? '{\n  "key": "new_value"\n}' : '输入文本内容...'}
             spellCheck={false}
+            aria-label="右侧内容（修改）"
           />
         </div>
       </div>

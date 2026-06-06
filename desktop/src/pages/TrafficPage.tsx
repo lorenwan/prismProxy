@@ -1,16 +1,33 @@
 import { useEffect, useState, useCallback } from 'react'
+import { listen } from '@tauri-apps/api/event'
 import TrafficList from '../features/traffic/components/TrafficList'
 import TrafficDetail from '../features/traffic/components/TrafficDetail'
-import { useWebSocket } from '../hooks/useWebSocket'
 import { useTrafficStore } from '../features/traffic/trafficStore'
 import { getTrafficList } from '../features/traffic/trafficService'
+import type { WsMessage, Transaction } from '../types'
 
 export default function TrafficPage() {
-  const { setTrafficList, setLoading } = useTrafficStore()
+  const { setTrafficList, setLoading, addTraffic, removeTraffic, clearTraffic } = useTrafficStore()
   const [error, setError] = useState<string | null>(null)
 
-  // 连接 WebSocket
-  useWebSocket()
+  // 监听 Tauri 事件
+  useEffect(() => {
+    const unlisten = listen('traffic:event', (event) => {
+      const msg = event.payload as WsMessage
+      switch (msg.type) {
+        case 'traffic:new':
+          addTraffic(msg.payload as Transaction)
+          break
+        case 'traffic:delete':
+          removeTraffic(msg.payload.id)
+          break
+        case 'traffic:clear':
+          clearTraffic()
+          break
+      }
+    })
+    return () => { unlisten.then(fn => fn()) }
+  }, [addTraffic, removeTraffic, clearTraffic])
 
   // 加载初始数据
   const loadTraffic = useCallback(async () => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { getPerfReports, deletePerfReport } from '../services/perf'
 import type { PerformanceReport } from '../services/perf'
 
@@ -16,43 +16,60 @@ export default function PerformancePage() {
     if (selected?.id === id) setSelected(null)
   }
 
-  // 从报告中提取概览数据
-  const completedReports = reports.filter((r) => r.status === 'completed' && r.results)
-  const totalRequests = completedReports.reduce((sum, r) => sum + (r.results?.totalRequests || 0), 0)
-  const avgDuration = completedReports.length > 0
-    ? Math.round(completedReports.reduce((sum, r) => sum + (r.results?.avgDurationMs || 0), 0) / completedReports.length)
-    : 0
+  // 从报告中提取概览数据 - 使用 useMemo 缓存计算结果
+  const completedReports = useMemo(
+    () => reports.filter((r) => r.status === 'completed' && r.results),
+    [reports]
+  )
+
+  const totalRequests = useMemo(
+    () => completedReports.reduce((sum, r) => sum + (r.results?.totalRequests || 0), 0),
+    [completedReports]
+  )
+
+  const avgDuration = useMemo(
+    () => completedReports.length > 0
+      ? Math.round(completedReports.reduce((sum, r) => sum + (r.results?.avgDurationMs || 0), 0) / completedReports.length)
+      : 0,
+    [completedReports]
+  )
+
   const p50 = selected?.results?.p50Ms ?? 0
   const p90 = selected?.results?.p90Ms ?? 0
   const p99 = selected?.results?.p99Ms ?? 0
   const errorRate = selected?.results?.slowRequests ?? 0
 
-  // 慢请求：取所有报告中 p90 以上的请求
-  const slowRequests = completedReports
-    .filter((r) => r.results && r.results.avgDurationMs > 500)
-    .sort((a, b) => (b.results?.avgDurationMs || 0) - (a.results?.avgDurationMs || 0))
+  // 慢请求：取所有报告中 p90 以上的请求 - 缓存排序结果
+  const slowRequests = useMemo(
+    () => completedReports
+      .filter((r) => r.results && r.results.avgDurationMs > 500)
+      .sort((a, b) => (b.results?.avgDurationMs || 0) - (a.results?.avgDurationMs || 0)),
+    [completedReports]
+  )
 
-  // 域名统计（从报告 config 中提取）
-  const domainStats = new Map<string, { count: number; totalDuration: number; errors: number }>()
-  completedReports.forEach((r) => {
-    try {
-      const url = new URL(r.config.targetUrl)
-      const domain = url.hostname
-      const existing = domainStats.get(domain) || { count: 0, totalDuration: 0, errors: 0 }
-      existing.count++
-      existing.totalDuration += r.results?.avgDurationMs || 0
-      existing.errors += r.results?.slowRequests || 0
-      domainStats.set(domain, existing)
-    } catch {}
-  })
-  const domainStatsList = Array.from(domainStats.entries())
-    .map(([domain, stats]) => ({
-      domain,
-      requests: stats.count,
-      avgDuration: Math.round(stats.totalDuration / stats.count),
-      errorRate: stats.count > 0 ? ((stats.errors / stats.count) * 100).toFixed(1) : '0',
-    }))
-    .sort((a, b) => b.requests - a.requests)
+  // 域名统计（从报告 config 中提取）- 缓存复杂聚合计算
+  const domainStatsList = useMemo(() => {
+    const domainStats = new Map<string, { count: number; totalDuration: number; errors: number }>()
+    completedReports.forEach((r) => {
+      try {
+        const url = new URL(r.config.targetUrl)
+        const domain = url.hostname
+        const existing = domainStats.get(domain) || { count: 0, totalDuration: 0, errors: 0 }
+        existing.count++
+        existing.totalDuration += r.results?.avgDurationMs || 0
+        existing.errors += r.results?.slowRequests || 0
+        domainStats.set(domain, existing)
+      } catch {}
+    })
+    return Array.from(domainStats.entries())
+      .map(([domain, stats]) => ({
+        domain,
+        requests: stats.count,
+        avgDuration: Math.round(stats.totalDuration / stats.count),
+        errorRate: stats.count > 0 ? ((stats.errors / stats.count) * 100).toFixed(1) : '0',
+      }))
+      .sort((a, b) => b.requests - a.requests)
+  }, [completedReports])
 
   // 时间线数据（PerfResults 中无 timeline 字段，暂用空数组）
   const timeline: Array<{ rps: number; avgLatency: number; errorRate: number }> = []
@@ -81,7 +98,7 @@ export default function PerformancePage() {
             { label: '总请求数', value: totalRequests.toLocaleString(), color: 'var(--blue)' },
             { label: '平均耗时', value: `${avgDuration}ms`, color: 'var(--green)' },
             { label: 'P50', value: `${p50}ms`, color: 'var(--yellow)' },
-            { label: 'P90', value: `${p90}ms`, color: '#ff9e6d' },
+            { label: 'P90', value: `${p90}ms`, color: 'var(--yellow)' },
             { label: '慢请求', value: `${errorRate}`, color: 'var(--red)' },
           ].map((card) => (
             <div key={card.label} className="bg-[var(--bg-inset)] border border-[var(--border)] rounded p-3">
@@ -142,7 +159,7 @@ export default function PerformancePage() {
                       <td className="px-3 py-1.5 text-right">
                         <button
                           onClick={(e) => { e.stopPropagation(); handleDelete(report.id) }}
-                          className="text-[var(--red)] hover:text-[#ff9eaf]"
+                          className="text-[var(--red)] hover:text-[var(--red)]/90"
                         >
                           ✕
                         </button>
@@ -262,7 +279,7 @@ export default function PerformancePage() {
                     <td className="px-3 py-1.5 text-right">
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDelete(report.id) }}
-                        className="text-[var(--red)] hover:text-[#ff9eaf]"
+                        className="text-[var(--red)] hover:text-[var(--red)]/90"
                       >
                         ✕
                       </button>

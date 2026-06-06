@@ -90,13 +90,14 @@ export default function AiPage() {
             value={provider}
             onChange={(e) => setProvider(e.target.value)}
             className="px-2 py-1 bg-[var(--hover-bg)] border border-[var(--border)] rounded text-xs focus:border-[var(--blue)] focus:outline-none"
+            aria-label="AI Provider"
           >
             {providers.map((p) => (
               <option key={p.value} value={p.value}>{p.label}</option>
             ))}
           </select>
         </div>
-        <button onClick={handleClear} className="px-2 py-1 text-xs bg-[var(--hover-bg)] rounded hover:bg-[var(--hover-bg)]">
+        <button onClick={handleClear} className="px-2 py-1 text-xs bg-[var(--hover-bg)] rounded hover:bg-[var(--hover-bg)]" aria-label="清空对话">
           清空对话
         </button>
       </div>
@@ -109,6 +110,7 @@ export default function AiPage() {
             onClick={() => handleSend(action.prompt)}
             disabled={loading}
             className="px-3 py-1 text-xs bg-[var(--hover-bg)] border border-[var(--border)] rounded hover:bg-[var(--selected-bg)] hover:border-[var(--blue)] disabled:opacity-50"
+            aria-label={action.label}
           >
             {action.label}
           </button>
@@ -153,13 +155,14 @@ export default function AiPage() {
             className="flex-1 px-3 py-2 bg-[var(--hover-bg)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
             placeholder="输入消息..."
             disabled={loading}
+            aria-label="输入消息"
           />
           {loading ? (
-            <button onClick={handleStop} className="px-4 py-2 bg-[var(--red)] text-white rounded text-sm hover:bg-[var(--red)]/90">
+            <button onClick={handleStop} className="px-4 py-2 bg-[var(--red)] text-white rounded text-sm hover:bg-[var(--red)]/90" aria-label="停止生成">
               停止
             </button>
           ) : (
-            <button onClick={() => handleSend()} className="px-4 py-2 bg-[var(--blue)] text-white rounded text-sm hover:bg-[var(--blue)]/90">
+            <button onClick={() => handleSend()} className="px-4 py-2 bg-[var(--blue)] text-white rounded text-sm hover:bg-[var(--blue)]/90" aria-label="发送消息">
               发送
             </button>
           )}

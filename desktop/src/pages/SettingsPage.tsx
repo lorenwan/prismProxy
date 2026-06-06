@@ -113,6 +113,9 @@ export default function SettingsPage() {
                 className={`relative w-14 h-7 rounded-full transition-colors ${
                   proxyRunning ? 'bg-[var(--green)]' : 'bg-[var(--border)]'
                 } ${proxyLoading ? 'opacity-50' : ''}`}
+                role="switch"
+                aria-checked={proxyRunning}
+                aria-label={proxyRunning ? '停止代理服务' : '启动代理服务'}
               >
                 <div
                   className={`absolute top-0.5 w-6 h-6 rounded-full bg-white transition-all ${
@@ -143,6 +146,9 @@ export default function SettingsPage() {
                 className={`relative w-14 h-7 rounded-full transition-colors ${
                   systemProxyEnabled ? 'bg-[var(--green)]' : 'bg-[var(--border)]'
                 } ${systemProxyLoading || !proxyRunning ? 'opacity-50' : ''}`}
+                role="switch"
+                aria-checked={systemProxyEnabled}
+                aria-label={systemProxyEnabled ? '禁用系统代理' : '启用系统代理'}
               >
                 <div
                   className={`absolute top-0.5 w-6 h-6 rounded-full bg-white transition-all ${
@@ -199,12 +205,14 @@ export default function SettingsPage() {
           <div className="bg-[var(--hover-bg)] rounded-lg p-4 space-y-4">
             {/* 端口 */}
             <div>
-              <label className="block text-sm text-[var(--text-tertiary)] mb-1">代理端口</label>
+              <label htmlFor="proxy-port" className="block text-sm text-[var(--text-tertiary)] mb-1">代理端口</label>
               <input
+                id="proxy-port"
                 type="number"
                 value={settings.proxy.port}
                 onChange={(e) => updateProxy('port', Number(e.target.value))}
                 className="w-40 px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
+                aria-label="代理端口"
               />
             </div>
 
@@ -219,6 +227,9 @@ export default function SettingsPage() {
                 className={`w-10 h-5 rounded-full transition-colors ${
                   settings.proxy.mitmEnabled ? 'bg-[var(--green)]' : 'bg-[var(--border)]'
                 }`}
+                role="switch"
+                aria-checked={settings.proxy.mitmEnabled}
+                aria-label={settings.proxy.mitmEnabled ? '禁用 MITM' : '启用 MITM'}
               >
                 <div
                   className={`w-4 h-4 rounded-full bg-white transition-transform ${
@@ -233,6 +244,7 @@ export default function SettingsPage() {
               <button
                 onClick={downloadCaCert}
                 className="px-4 py-2 bg-[var(--selected-bg)] text-[var(--blue)] rounded text-sm hover:bg-[var(--hover-bg)]"
+                aria-label="下载 CA 证书"
               >
                 下载 CA 证书
               </button>
@@ -247,11 +259,13 @@ export default function SettingsPage() {
           <div className="bg-[var(--hover-bg)] rounded-lg p-4 space-y-4">
             {/* Provider */}
             <div>
-              <label className="block text-sm text-[var(--text-tertiary)] mb-1">AI Provider</label>
+              <label htmlFor="ai-provider" className="block text-sm text-[var(--text-tertiary)] mb-1">AI Provider</label>
               <select
+                id="ai-provider"
                 value={settings.ai.provider}
                 onChange={(e) => updateAi('provider', e.target.value)}
                 className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
+                aria-label="AI Provider"
               >
                 <option value="openai">OpenAI</option>
                 <option value="claude">Claude</option>
@@ -261,35 +275,41 @@ export default function SettingsPage() {
 
             {/* API Key */}
             <div>
-              <label className="block text-sm text-[var(--text-tertiary)] mb-1">API Key</label>
+              <label htmlFor="ai-api-key" className="block text-sm text-[var(--text-tertiary)] mb-1">API Key</label>
               <input
+                id="ai-api-key"
                 type="password"
                 value={settings.ai.apiKey}
                 onChange={(e) => updateAi('apiKey', e.target.value)}
                 className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                 placeholder="sk-..."
+                aria-label="AI API Key"
               />
             </div>
 
             {/* Base URL */}
             <div>
-              <label className="block text-sm text-[var(--text-tertiary)] mb-1">Base URL</label>
+              <label htmlFor="ai-base-url" className="block text-sm text-[var(--text-tertiary)] mb-1">Base URL</label>
               <input
+                id="ai-base-url"
                 value={settings.ai.baseUrl}
                 onChange={(e) => updateAi('baseUrl', e.target.value)}
                 className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                 placeholder="https://api.openai.com/v1"
+                aria-label="AI Base URL"
               />
             </div>
 
             {/* Model */}
             <div>
-              <label className="block text-sm text-[var(--text-tertiary)] mb-1">模型</label>
+              <label htmlFor="ai-model" className="block text-sm text-[var(--text-tertiary)] mb-1">模型</label>
               <input
+                id="ai-model"
                 value={settings.ai.model}
                 onChange={(e) => updateAi('model', e.target.value)}
                 className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                 placeholder="gpt-4o"
+                aria-label="AI 模型"
               />
             </div>
           </div>
@@ -297,7 +317,7 @@ export default function SettingsPage() {
 
         {/* 保存按钮 */}
         <div className="flex items-center gap-3">
-          <button onClick={handleSave} className="px-6 py-2 bg-[var(--blue)] text-white rounded text-sm hover:bg-[var(--blue)]/90">
+          <button onClick={handleSave} className="px-6 py-2 bg-[var(--blue)] text-white rounded text-sm hover:bg-[var(--blue)]/90" aria-label="保存设置">
             保存设置
           </button>
           {saved && <span className="text-sm text-[var(--green)]">保存成功</span>}

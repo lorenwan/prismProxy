@@ -54,38 +54,58 @@ export default function RewritePage() {
   }
 
   async function handleSave() {
-    if (isNew) {
-      const created = await createRewrite(editing)
-      setRules([...rules, created])
-      setSelected(created)
-      setIsNew(false)
-    } else if (selected) {
-      const updated = await updateRewrite(selected.id, editing)
-      setRules(rules.map((r) => (r.id === selected.id ? updated : r)))
-      setSelected(updated)
+    try {
+      if (isNew) {
+        const created = await createRewrite(editing)
+        setRules([...rules, created])
+        setSelected(created)
+        setIsNew(false)
+      } else if (selected) {
+        const updated = await updateRewrite(selected.id, editing)
+        setRules(rules.map((r) => (r.id === selected.id ? updated : r)))
+        setSelected(updated)
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '保存重写规则失败'
+      console.error('保存重写规则失败:', err)
+      alert(message)
     }
   }
 
   async function handleDelete(rule: RewriteRule) {
-    await deleteRewrite(rule.id)
-    setRules(rules.filter((r) => r.id !== rule.id))
-    if (selected?.id === rule.id) {
-      setSelected(null)
-      setEditing(emptyRule)
-      setIsNew(false)
+    try {
+      await deleteRewrite(rule.id)
+      setRules(rules.filter((r) => r.id !== rule.id))
+      if (selected?.id === rule.id) {
+        setSelected(null)
+        setEditing(emptyRule)
+        setIsNew(false)
+      }
+      setDeleteConfirm(null)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '删除重写规则失败'
+      console.error('删除重写规则失败:', err)
+      alert(message)
     }
-    setDeleteConfirm(null)
   }
 
   async function handleToggle(rule: RewriteRule) {
-    await toggleRewrite(rule.id, !rule.enabled)
-    setRules(rules.map((r) => (r.id === rule.id ? { ...r, enabled: !r.enabled } : r)))
+    try {
+      await toggleRewrite(rule.id, !rule.enabled)
+      setRules(rules.map((r) => (r.id === rule.id ? { ...r, enabled: !r.enabled } : r)))
+    } catch (err) {
+      console.error('切换重写规则状态失败:', err)
+    }
   }
 
   async function handleBatchToggle(enabled: boolean) {
-    const ids = rules.map((r) => r.id)
-    await batchToggleRewrites(ids, enabled)
-    setRules(rules.map((r) => ({ ...r, enabled })))
+    try {
+      const ids = rules.map((r) => r.id)
+      await batchToggleRewrites(ids, enabled)
+      setRules(rules.map((r) => ({ ...r, enabled })))
+    } catch (err) {
+      console.error('批量操作失败:', err)
+    }
   }
 
   function getTypeLabel(type: string) {
@@ -98,13 +118,13 @@ export default function RewritePage() {
       <div className="w-80 border-r border-[var(--border)] flex flex-col bg-[var(--bg-inset)]">
         {/* 工具栏 */}
         <div className="flex items-center gap-1 p-2 border-b border-[var(--border)]">
-          <button onClick={handleNew} className="px-2 py-1 text-xs bg-[var(--blue)] text-white rounded hover:bg-[var(--blue)]/90">
+          <button onClick={handleNew} className="px-2 py-1 text-xs bg-[var(--blue)] text-white rounded hover:bg-[var(--blue)]/90" aria-label="新增重写规则">
             新增
           </button>
-          <button onClick={() => handleBatchToggle(true)} className="px-2 py-1 text-xs bg-[var(--hover-bg)] rounded hover:bg-[var(--hover-bg)]">
+          <button onClick={() => handleBatchToggle(true)} className="px-2 py-1 text-xs bg-[var(--hover-bg)] rounded hover:bg-[var(--hover-bg)]" aria-label="全部启用重写规则">
             全部启用
           </button>
-          <button onClick={() => handleBatchToggle(false)} className="px-2 py-1 text-xs bg-[var(--hover-bg)] rounded hover:bg-[var(--hover-bg)]">
+          <button onClick={() => handleBatchToggle(false)} className="px-2 py-1 text-xs bg-[var(--hover-bg)] rounded hover:bg-[var(--hover-bg)]" aria-label="全部禁用重写规则">
             全部禁用
           </button>
         </div>
@@ -140,6 +160,9 @@ export default function RewritePage() {
                 className={`w-8 h-4 rounded-full transition-colors ${
                   rule.enabled ? 'bg-[var(--green)]' : 'bg-[var(--border)]'
                 }`}
+                role="switch"
+                aria-checked={rule.enabled}
+                aria-label={rule.enabled ? '禁用重写规则' : '启用重写规则'}
               >
                 <div
                   className={`w-3 h-3 rounded-full bg-white transition-transform ${
@@ -161,22 +184,26 @@ export default function RewritePage() {
           <h2 className="text-lg font-semibold">{isNew ? '新增重写规则' : '编辑重写规则'}</h2>
 
           <div>
-            <label className="block text-sm text-[var(--text-tertiary)] mb-1">规则名称</label>
+            <label htmlFor="rewrite-name" className="block text-sm text-[var(--text-tertiary)] mb-1">规则名称</label>
             <input
+              id="rewrite-name"
               value={editing.name || ''}
               onChange={(e) => setEditing({ ...editing, name: e.target.value })}
               className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
               placeholder="输入规则名称"
+              aria-label="规则名称"
             />
           </div>
 
           <div>
-            <label className="block text-sm text-[var(--text-tertiary)] mb-1">优先级</label>
+            <label htmlFor="rewrite-priority" className="block text-sm text-[var(--text-tertiary)] mb-1">优先级</label>
             <input
+              id="rewrite-priority"
               type="number"
               value={editing.priority || 0}
               onChange={(e) => setEditing({ ...editing, priority: Number(e.target.value) })}
               className="w-32 px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
+              aria-label="规则优先级"
             />
           </div>
 
@@ -187,6 +214,7 @@ export default function RewritePage() {
               value={editing.type || 'add_header'}
               onChange={(e) => setEditing({ ...editing, type: e.target.value as RewriteRule['type'] })}
               className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
+              aria-label="规则类型"
             >
               {rewriteTypes.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
@@ -202,6 +230,7 @@ export default function RewritePage() {
                 value={editing.matchType || 'host'}
                 onChange={(e) => setEditing({ ...editing, matchType: e.target.value as RewriteRule['matchType'] })}
                 className="px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
+                aria-label="匹配类型"
               >
                 {matchTypes.map((t) => (
                   <option key={t.value} value={t.value}>{t.label}</option>
@@ -212,6 +241,7 @@ export default function RewritePage() {
                 onChange={(e) => setEditing({ ...editing, matchValue: e.target.value })}
                 className="flex-1 px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                 placeholder="匹配值（支持正则）"
+                aria-label="匹配值"
               />
             </div>
           </div>
@@ -225,6 +255,7 @@ export default function RewritePage() {
                 onChange={(e) => setEditing({ ...editing, actionKey: e.target.value })}
                 className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                 placeholder="Header Name"
+                aria-label="Header 名称"
               />
             )}
             {editing.type === 'remove_header' && (
@@ -233,12 +264,14 @@ export default function RewritePage() {
                 onChange={(e) => setEditing({ ...editing, actionKey: e.target.value })}
                 className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm focus:border-[var(--blue)] focus:outline-none"
                 placeholder="要删除的 Header Name"
+                aria-label="要删除的 Header 名称"
               />
             )}
             <textarea
               value={editing.actionValue || ''}
               onChange={(e) => setEditing({ ...editing, actionValue: e.target.value })}
               className="w-full px-3 py-2 bg-[var(--bg-inset)] border border-[var(--border)] rounded text-sm h-32 resize-none focus:border-[var(--blue)] focus:outline-none font-mono"
+              aria-label="动作值"
               placeholder={
                 editing.type === 'add_header' ? 'Header Value' :
                 editing.type === 'replace_header' ? '新的 Header Value' :
@@ -252,11 +285,11 @@ export default function RewritePage() {
 
           {/* 操作按钮 */}
           <div className="flex gap-2 pt-2">
-            <button onClick={handleSave} className="px-4 py-2 bg-[var(--blue)] text-white rounded text-sm hover:bg-[var(--blue)]/90">
+            <button onClick={handleSave} className="px-4 py-2 bg-[var(--blue)] text-white rounded text-sm hover:bg-[var(--blue)]/90" aria-label="保存重写规则">
               保存
             </button>
             {!isNew && selected && (
-              <button onClick={() => setDeleteConfirm(selected)} className="px-4 py-2 bg-[var(--red)] text-white rounded text-sm hover:bg-[var(--red)]/90">
+              <button onClick={() => setDeleteConfirm(selected)} className="px-4 py-2 bg-[var(--red)] text-white rounded text-sm hover:bg-[var(--red)]/90" aria-label="删除重写规则">
                 删除
               </button>
             )}
