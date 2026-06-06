@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"syscall"
 	"time"
@@ -40,12 +41,22 @@ func main() {
 	port := flag.Int("port", 0, "gRPC 服务器端口（覆盖 GRPC_PORT 环境变量）")
 	proxyPortFlag := flag.Int("proxy-port", 0, "HTTP 代理端口（覆盖 PROXY_PORT 环境变量）")
 	httpPortFlag := flag.Int("http-port", 0, "HTTP/gRPC-Web 服务器端口（覆盖 HTTP_PORT 环境变量）")
+	dbPathFlag := flag.String("db-path", "", "数据库文件路径（覆盖 DB_PATH 环境变量）")
 	flag.Parse()
 
 	log.Println("[INFO] PrismProxy gRPC 服务器启动中...")
 
 	// 初始化 SQLite 存储
-	dbPath := getEnv("DB_PATH", "./prismproxy.db")
+	dbPath := getEnv("DB_PATH", "./data/prismproxy.db")
+	if *dbPathFlag != "" {
+		dbPath = *dbPathFlag
+	}
+	// 确保数据库目录存在
+	if dir := filepath.Dir(dbPath); dir != "." {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			log.Fatalf("[FATAL] 创建数据库目录失败: %v", err)
+		}
+	}
 	store, err := storage.NewStorage(dbPath)
 	if err != nil {
 		log.Fatalf("[FATAL] 初始化存储失败: %v", err)

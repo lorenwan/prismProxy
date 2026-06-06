@@ -1,4 +1,4 @@
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_shell::process::CommandChild;
 use tauri_plugin_shell::ShellExt;
 use tokio::task::JoinHandle;
@@ -56,11 +56,23 @@ impl SidecarManager {
 
     /// 生成 sidecar 子进程
     async fn spawn_sidecar(&mut self, app: &AppHandle) -> Result<(), String> {
+        // 获取应用数据目录，数据库文件存放在此处
+        let db_path = app
+            .path()
+            .app_data_dir()
+            .map(|p| p.join("prismproxy.db").to_string_lossy().to_string())
+            .unwrap_or_else(|_| "./data/prismproxy.db".to_string());
+
         let (rx, child) = app
             .shell()
             .sidecar("prismproxy-server")
             .map_err(|e| e.to_string())?
-            .args(&["--port", "9090", "--http-port", "8080", "--proxy-port", "8888"])
+            .args(&[
+                "--port", "9090",
+                "--http-port", "8080",
+                "--proxy-port", "8888",
+                "--db-path", &db_path,
+            ])
             .spawn()
             .map_err(|e| e.to_string())?;
 
