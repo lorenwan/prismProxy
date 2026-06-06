@@ -1,10 +1,12 @@
 import { useEffect, useRef, useCallback, useMemo } from 'react'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { useTrafficStore } from '../trafficStore'
 import { getStatusColor, getMethodColor } from '../../../lib/traffic-utils'
 
 export default function TrafficList() {
   const { trafficList, selectedId, setSelectedId, filters, loading } = useTrafficStore()
   const listRef = useRef<HTMLDivElement>(null)
+  const parentRef = useRef<HTMLDivElement>(null)
 
   // 使用 useMemo 缓存过滤结果，避免每次渲染重新计算
   const filteredList = useMemo(() => {
@@ -15,6 +17,14 @@ export default function TrafficList() {
       return true
     })
   }, [trafficList, filters])
+
+  // 虚拟化列表
+  const virtualizer = useVirtualizer({
+    count: filteredList.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 32, // h-8 = 32px
+    overscan: 20,
+  })
 
   // 键盘导航
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -66,12 +76,12 @@ export default function TrafficList() {
 
   // 滚动到选中项
   useEffect(() => {
-    if (!selectedId || !listRef.current) return
-    const selectedElement = listRef.current.querySelector(`[data-id="${selectedId}"]`)
-    if (selectedElement) {
-      selectedElement.scrollIntoView({ block: 'nearest' })
+    if (!selectedId || !filteredList.length) return
+    const index = filteredList.findIndex((item) => item.id === selectedId)
+    if (index !== -1) {
+      virtualizer.scrollToIndex(index, { align: 'center' })
     }
-  }, [selectedId])
+  }, [selectedId, filteredList, virtualizer])
 
   // 加载状态
   if (loading && trafficList.length === 0) {
@@ -105,7 +115,7 @@ export default function TrafficList() {
       </div>
 
       {/* 列表 */}
-      <div className="flex-1 overflow-y-auto" role="rowgroup">
+      <div ref={parentRef} className="flex-1 overflow-y-auto" role="rowgroup">
         {loading ? (
           <div className="flex items-center justify-center h-full gap-2 text-[var(--text-tertiary)] animate-fade-in">
             <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
@@ -132,47 +142,58 @@ export default function TrafficList() {
             </div>
           </div>
         ) : (
-          filteredList.map((item) => {
-            const isSelected = selectedId === item.id
-            return (
-              <div
-                key={item.id}
-                data-id={item.id}
-                onClick={() => setSelectedId(item.id)}
-                className={`
-                  h-8 flex items-center px-3 text-xs cursor-pointer
-                  border-l-2 border-b border-b-[var(--border-subtle)]
-                  transition-colors duration-75
-                  ${isSelected
-                    ? 'bg-[var(--selected-bg)] border-l-[var(--blue)] text-[var(--text-primary)]'
-                    : 'border-l-transparent hover:bg-[var(--hover-bg)]'
-                  }
-                `}
-                role="row"
-                aria-selected={isSelected}
-                tabIndex={-1}
-              >
-                <span className={`w-[72px] font-mono font-medium ${getStatusColor(item.response?.status_code ?? 0)}`} role="cell">
-                  {item.response?.status_code ?? '-'}
-                </span>
-                <span className={`w-[64px] font-mono font-medium ${getMethodColor(item.method)}`} role="cell">
-                  {item.method}
-                </span>
-                <span className="flex-1 min-w-0 truncate text-[var(--text-primary)]" role="cell">
-                  {item.host}
-                </span>
-                <span className="flex-1 min-w-0 truncate text-[var(--text-secondary)]" role="cell">
-                  {item.path}
-                </span>
-                <span className={`w-[72px] text-right font-mono ${item.duration_ms > 1000 ? 'text-[var(--yellow)]' : 'text-[var(--text-tertiary)]'}`} role="cell">
-                  {item.duration_ms >= 1000 ? `${(item.duration_ms / 1000).toFixed(1)}s` : `${item.duration_ms}ms`}
-                </span>
-                <span className="w-[80px] text-right text-[var(--text-tertiary)] font-mono" role="cell">
-                  {new Date(item.timestamp).toLocaleTimeString()}
-                </span>
-              </div>
-            )
-          })
+          <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+              const item = filteredList[virtualRow.index]
+              const isSelected = selectedId === item.id
+              return (
+                <div
+                  key={item.id}
+                  data-id={item.id}
+                  onClick={() => setSelectedId(item.id)}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                  className={`
+                    h-8 flex items-center px-3 text-xs cursor-pointer
+                    border-l-2 border-b border-b-[var(--border-subtle)]
+                    transition-colors duration-75
+                    ${isSelected
+                      ? 'bg-[var(--selected-bg)] border-l-[var(--blue)] text-[var(--text-primary)]'
+                      : 'border-l-transparent hover:bg-[var(--hover-bg)]'
+                    }
+                  `}
+                  role="row"
+                  aria-selected={isSelected}
+                  tabIndex={-1}
+                >
+                  <span className={`w-[72px] font-mono font-medium ${getStatusColor(item.response?.status_code ?? 0)}`} role="cell">
+                    {item.response?.status_code ?? '-'}
+                  </span>
+                  <span className={`w-[64px] font-mono font-medium ${getMethodColor(item.method)}`} role="cell">
+                    {item.method}
+                  </span>
+                  <span className="flex-1 min-w-0 truncate text-[var(--text-primary)]" role="cell">
+                    {item.host}
+                  </span>
+                  <span className="flex-1 min-w-0 truncate text-[var(--text-secondary)]" role="cell">
+                    {item.path}
+                  </span>
+                  <span className={`w-[72px] text-right font-mono ${item.duration_ms > 1000 ? 'text-[var(--yellow)]' : 'text-[var(--text-tertiary)]'}`} role="cell">
+                    {item.duration_ms >= 1000 ? `${(item.duration_ms / 1000).toFixed(1)}s` : `${item.duration_ms}ms`}
+                  </span>
+                  <span className="w-[80px] text-right text-[var(--text-tertiary)] font-mono" role="cell">
+                    {new Date(item.timestamp).toLocaleTimeString()}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
         )}
       </div>
 

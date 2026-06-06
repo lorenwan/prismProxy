@@ -27,53 +27,50 @@ export function sendMessageStream(
   let unlistenEnd: (() => void) | null = null
   let unlistenError: (() => void) | null = null
 
-  // 启动流式聊天
-  invoke('stream_chat', {
-    messages: messages.map((m) => ({ role: m.role, content: m.content })),
-    model: provider,
-  }).catch((err) => {
-    if (!controller.signal.aborted) onError(err)
-  })
-
-  // 监听 chunk 事件
-  listen('ai:chat_chunk', (event) => {
-    if (controller.signal.aborted) return
-    try {
-      const chunk = JSON.parse(event.payload as string)
-      onChunk(chunk.content || '')
-    } catch {
-      onChunk(event.payload as string)
-    }
-  }).then((unlisten) => {
-    unlistenChunk = unlisten
-  })
-
-  // 监听结束事件
-  listen('ai:chat_end', () => {
-    if (controller.signal.aborted) return
-    onDone()
-    cleanup()
-  }).then((unlisten) => {
-    unlistenEnd = unlisten
-  })
-
-  // 监听错误事件
-  listen<string>('ai:chat_error', (event) => {
-    if (controller.signal.aborted) return
-    onError(new Error(event.payload))
-    cleanup()
-  }).then((unlisten) => {
-    unlistenError = unlisten
-  })
-
-  // 清理所有事件监听
   const cleanup = () => {
     unlistenChunk?.()
     unlistenEnd?.()
     unlistenError?.()
   }
 
-  // 包装 abort 方法以同时清理事件监听
+  // 先注册所有 listener，再启动流
+  Promise.all([
+    listen('ai:chat_chunk', (event) => {
+      if (controller.signal.aborted) return
+      try {
+        const chunk = JSON.parse(event.payload as string)
+        onChunk(chunk.content || '')
+      } catch {
+        onChunk(event.payload as string)
+      }
+    }),
+    listen('ai:chat_end', () => {
+      if (controller.signal.aborted) return
+      onDone()
+      cleanup()
+    }),
+    listen<string>('ai:chat_error', (event) => {
+      if (controller.signal.aborted) return
+      onError(new Error(event.payload))
+      cleanup()
+    }),
+  ]).then(([unlistenC, unlistenE, unlistenErr]) => {
+    unlistenChunk = unlistenC
+    unlistenEnd = unlistenE
+    unlistenError = unlistenErr
+
+    // listener 注册完成后再启动流
+    invoke('stream_chat', {
+      messages: messages.map((m) => ({ role: m.role, content: m.content })),
+      model: provider,
+    }).catch((err) => {
+      if (!controller.signal.aborted) {
+        onError(err)
+        cleanup()
+      }
+    })
+  })
+
   const originalAbort = controller.abort.bind(controller)
   controller.abort = () => {
     originalAbort()

@@ -241,7 +241,7 @@ export default function CollectionsPage() {
             <div key={col.id}>
               <div
                 onClick={() => { setSelectedCollection(col); setSelectedRequest(null); setEditingRequest({}) }}
-                className={`flex items-center gap-2 px-3 py-2 cursor-pointer border-b border-[var(--border-subtle)] ${
+                className={`group flex items-center gap-2 px-3 py-2 cursor-pointer border-b border-[var(--border-subtle)] ${
                   selectedCollection?.id === col.id && !selectedRequest ? 'bg-[var(--selected-bg)]' : 'hover:bg-[var(--hover-bg)]'
                 }`}
               >

@@ -78,7 +78,7 @@ export async function listTraffic(page: number = 1, pageSize: number = 20): Prom
  * @param id 流量记录 ID
  */
 export async function getTraffic(id: string): Promise<TrafficEntry> {
-  return invoke('get_traffic', { id })
+  return invoke('get_traffic', { id: parseInt(id, 10) })
 }
 
 /**
@@ -86,7 +86,7 @@ export async function getTraffic(id: string): Promise<TrafficEntry> {
  * @param ids 要删除的流量记录 ID 数组
  */
 export async function deleteTraffic(ids: string[]): Promise<void> {
-  return invoke('delete_traffic', { ids })
+  return invoke('delete_traffic', { ids: ids.map(id => parseInt(id, 10)) })
 }
 
 /**

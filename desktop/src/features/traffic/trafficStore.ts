@@ -1,6 +1,9 @@
 import { create } from 'zustand'
 import type { Transaction } from '../../types'
 
+// 流量列表最大容量，防止长时间抓包后内存溢出
+const MAX_TRAFFIC_ENTRIES = 5000
+
 interface TrafficState {
   // 流量列表
   trafficList: Transaction[]
@@ -34,9 +37,14 @@ export const useTrafficStore = create<TrafficState>((set) => ({
 
   setTrafficList: (list) => set({ trafficList: list }),
 
-  addTraffic: (item) => set((state) => ({
-    trafficList: [item, ...state.trafficList]
-  })),
+  addTraffic: (item) => set((state) => {
+    const newList = [item, ...state.trafficList]
+    return {
+      trafficList: newList.length > MAX_TRAFFIC_ENTRIES
+        ? newList.slice(0, MAX_TRAFFIC_ENTRIES)
+        : newList
+    }
+  }),
 
   updateTraffic: (item) => set((state) => ({
     trafficList: state.trafficList.map(t => t.id === item.id ? item : t)

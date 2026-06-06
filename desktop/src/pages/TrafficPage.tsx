@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import TrafficList from '../features/traffic/components/TrafficList'
@@ -10,28 +10,35 @@ import type { TrafficEvent, Transaction } from '../types'
 export default function TrafficPage() {
   const { setTrafficList, addTraffic, updateTraffic, removeTraffic, setLoading } = useTrafficStore()
   const [error, setError] = useState<string | null>(null)
+  const loadGeneration = useRef(0)
 
   // 加载初始数据
   const loadTraffic = useCallback(async () => {
+    const gen = ++loadGeneration.current
     setLoading(true)
     setError(null)
     try {
       const res = await getTrafficList({ pageSize: 100 })
+      if (gen !== loadGeneration.current) return // 过期，丢弃
       setTrafficList(res.data.data)
     } catch (err) {
+      if (gen !== loadGeneration.current) return
       const message = err instanceof Error ? err.message : '加载流量失败'
       console.error('加载流量失败:', err)
       setError(message)
     } finally {
-      setLoading(false)
+      if (gen === loadGeneration.current) setLoading(false)
     }
   }, [setTrafficList, setLoading])
 
   // 启动事件订阅
   useEffect(() => {
+    let cancelled = false
+
     invoke('subscribe_traffic').catch(console.error)
 
     const unlisten = listen('traffic:event', (event) => {
+      if (cancelled) return
       try {
         const msg = JSON.parse(event.payload as string) as TrafficEvent
         switch (msg.type) {
@@ -50,7 +57,11 @@ export default function TrafficPage() {
       }
     })
 
-    return () => { unlisten.then(fn => fn()) }
+    return () => {
+      cancelled = true
+      invoke('unsubscribe_traffic').catch(console.error)
+      unlisten.then(fn => fn())
+    }
   }, [addTraffic, updateTraffic, removeTraffic])
 
   useEffect(() => {

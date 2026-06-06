@@ -116,7 +116,7 @@ internal/
 
 ## 设计规范
 
-引用 [DESIGN.md](../design/DESIGN.md)
+引用 [DESIGN.md](../../DESIGN.md)
 
 - 深色主题，GitHub 风格配色
 - 使用 CSS 变量

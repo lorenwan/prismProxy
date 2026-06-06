@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { compareRequests } from '../services/diff'
-import type { DiffResult, DiffSection } from '../services/diff'
+import { compareJson, compareBody, type DiffSection, type DiffResult } from '../services/diff'
 
 export default function DiffPage() {
   const [leftInput, setLeftInput] = useState('')
@@ -20,23 +19,37 @@ export default function DiffPage() {
     setResult(null)
 
     try {
+      let leftContent = leftInput
+      let rightContent = rightInput
+
       if (mode === 'json') {
-        JSON.parse(leftInput)
-        JSON.parse(rightInput)
+        // 校验并格式化 JSON
+        leftContent = JSON.stringify(JSON.parse(leftInput))
+        rightContent = JSON.stringify(JSON.parse(rightInput))
       }
 
-      const diffResult = await compareRequests({
+      let diffSections: DiffSection[]
+      if (mode === 'json') {
+        diffSections = await compareJson(leftContent, rightContent)
+      } else {
+        diffSections = await compareBody(leftContent, rightContent)
+      }
+
+      setResult({
         leftId: 'inline-left',
         rightId: 'inline-right',
-        compareHeaders: true,
-        compareBody: true,
+        requestDiff: diffSections,
+        responseDiff: [],
+        summary: {
+          requestChanges: diffSections.filter(d => d.type !== 'equal').length,
+          responseChanges: 0,
+        },
       })
-      setResult(diffResult)
-    } catch (err: any) {
+    } catch (err) {
       if (err instanceof SyntaxError) {
         setError('JSON 格式错误，请检查输入')
       } else {
-        setError(String(err.message || err))
+        setError(err instanceof Error ? err.message : '对比失败')
       }
     } finally {
       setComparing(false)
@@ -57,14 +70,6 @@ export default function DiffPage() {
     setError('')
   }
 
-  function formatJson(input: string): string {
-    try {
-      return JSON.stringify(JSON.parse(input), null, 2)
-    } catch {
-      return input
-    }
-  }
-
   function getDiffColor(type: DiffSection['type']) {
     switch (type) {
       case 'added': return 'bg-[var(--green)]/15 text-[var(--green)] border-l-2 border-[var(--green)]'
@@ -83,37 +88,9 @@ export default function DiffPage() {
     }
   }
 
-  // 本地文本对比（当 API 不可用时的后备方案）
-  function localTextDiff(left: string, right: string): DiffSection[] {
-    const leftLines = left.split('\n')
-    const rightLines = right.split('\n')
-    const sections: DiffSection[] = []
-    const maxLen = Math.max(leftLines.length, rightLines.length)
-
-    for (let i = 0; i < maxLen; i++) {
-      const l = leftLines[i]
-      const r = rightLines[i]
-      if (l === undefined) {
-        sections.push({ type: 'added', path: `line ${i + 1}`, right: r })
-      } else if (r === undefined) {
-        sections.push({ type: 'removed', path: `line ${i + 1}`, left: l })
-      } else if (l !== r) {
-        sections.push({ type: 'modified', path: `line ${i + 1}`, left: l, right: r })
-      } else {
-        sections.push({ type: 'equal', path: `line ${i + 1}`, left: l })
-      }
-    }
-    return sections
-  }
-
   const displaySections = result
     ? [...result.requestDiff, ...result.responseDiff]
-    : (leftInput && rightInput && !comparing)
-      ? localTextDiff(
-          mode === 'json' ? formatJson(leftInput) : leftInput,
-          mode === 'json' ? formatJson(rightInput) : rightInput
-        )
-      : []
+    : []
 
   return (
     <div className="flex flex-col h-full bg-[var(--hover-bg)]">

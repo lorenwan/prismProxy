@@ -6,6 +6,7 @@ import { startProxy, stopProxy, getProxyStatus, enableSystemProxy, disableSystem
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Settings>(defaultSettings)
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
   const [proxyRunning, setProxyRunning] = useState(false)
   const [proxyAddr, setProxyAddr] = useState('')
   const [proxyLoading, setProxyLoading] = useState(false)
@@ -75,9 +76,15 @@ export default function SettingsPage() {
 
   // 保存设置
   async function handleSave() {
-    await updateSettings(settings)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    setError('')
+    try {
+      await updateSettings(settings)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      console.error('保存设置失败:', err)
+      setError('保存失败: ' + (err instanceof Error ? err.message : String(err)))
+    }
   }
 
   // 更新代理设置
@@ -321,6 +328,7 @@ export default function SettingsPage() {
             保存设置
           </button>
           {saved && <span className="text-sm text-[var(--green)]">保存成功</span>}
+          {error && <span className="text-sm text-[var(--red)]">{error}</span>}
         </div>
       </div>
     </div>

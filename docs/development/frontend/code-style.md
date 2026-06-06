@@ -87,6 +87,46 @@ desktop/src/
 
 ---
 
+## 导入规范
+
+```typescript
+// 组件导入
+import { Button } from '@/components/ui/button'
+import { TrafficList } from '@/features/traffic'
+
+// 工具函数导入
+import { cn } from '@/lib/utils'
+import { getStatusColor } from '@/lib/traffic-utils'
+
+// Store 导入
+import { useTrafficStore } from '@/features/traffic/trafficStore'
+
+// Service 导入（Tauri IPC）
+import { invoke } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
+```
+
+---
+
+## Service 调用示例
+
+```typescript
+// 普通请求
+export async function listTraffic(page: number = 1) {
+  return invoke('list_traffic', { page, pageSize: 20 })
+}
+
+// 流式订阅
+export async function subscribeTraffic(callback: (event: TrafficEvent) => void) {
+  await invoke('subscribe_traffic')
+  return listen('traffic:event', (event) => {
+    callback(event.payload as TrafficEvent)
+  })
+}
+```
+
+---
+
 ## 安全规范
 
 - API Key 不写入日志
