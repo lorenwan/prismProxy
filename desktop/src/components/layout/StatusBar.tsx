@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import { Globe, Clock, Server } from 'lucide-react'
 import { useTrafficStore } from '../../features/traffic/trafficStore'
 import { getTrafficStats } from '../../features/traffic/trafficService'
+import { getProxyStatus } from '../../services/proxy'
 import type { TrafficStats } from '../../types'
 
 export default function StatusBar() {
   const { trafficList } = useTrafficStore()
   const [stats, setStats] = useState<TrafficStats | null>(null)
+  const [proxyRunning, setProxyRunning] = useState(false)
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -17,13 +19,35 @@ export default function StatusBar() {
         // 静默处理
       }
     }
+
+    const fetchProxyStatus = async () => {
+      try {
+        const status = await getProxyStatus()
+        setProxyRunning(status.running)
+      } catch {
+        // 静默处理
+      }
+    }
+
     fetchStats()
-    const timer = setInterval(fetchStats, 5000)
+    fetchProxyStatus()
+    const timer = setInterval(() => {
+      fetchStats()
+      fetchProxyStatus()
+    }, 5000)
     return () => clearInterval(timer)
   }, [])
 
   return (
     <footer className="h-6 bg-[var(--bg-secondary)] border-t border-[var(--border)] flex items-center px-3 text-[11px] text-[var(--text-secondary)] shrink-0 select-none">
+      {/* 连接状态 */}
+      <div className="flex items-center gap-1">
+        <div className={`w-2 h-2 rounded-full ${proxyRunning ? 'bg-[var(--green)]' : 'bg-[var(--red)]'}`} />
+        <span>{proxyRunning ? '已连接' : '未连接'}</span>
+      </div>
+
+      <span className="mx-3 text-[var(--border)]">|</span>
+
       {/* 流量统计 */}
       <div className="flex items-center gap-1">
         <Globe size={12} />

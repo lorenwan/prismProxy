@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getRewrites, createRewrite, updateRewrite, deleteRewrite, toggleRewrite, batchToggleRewrites } from '../services/rewrites'
 import type { RewriteRule } from '../types'
+import { useErrorHandler } from '../lib/error-handler'
 
 const rewriteTypes = [
   { value: 'add_header', label: '添加请求头' },
@@ -31,6 +32,7 @@ const emptyRule: Partial<RewriteRule> = {
 }
 
 export default function RewritePage() {
+  const handleError = useErrorHandler()
   const [rules, setRules] = useState<RewriteRule[]>([])
   const [selected, setSelected] = useState<RewriteRule | null>(null)
   const [editing, setEditing] = useState<Partial<RewriteRule>>(emptyRule)
@@ -66,9 +68,7 @@ export default function RewritePage() {
         setSelected(updated)
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : '保存重写规则失败'
-      console.error('保存重写规则失败:', err)
-      alert(message)
+      handleError(err, '保存重写规则失败')
     }
   }
 
@@ -83,9 +83,7 @@ export default function RewritePage() {
       }
       setDeleteConfirm(null)
     } catch (err) {
-      const message = err instanceof Error ? err.message : '删除重写规则失败'
-      console.error('删除重写规则失败:', err)
-      alert(message)
+      handleError(err, '删除重写规则失败')
     }
   }
 
@@ -94,7 +92,7 @@ export default function RewritePage() {
       await toggleRewrite(rule.id, !rule.enabled)
       setRules(rules.map((r) => (r.id === rule.id ? { ...r, enabled: !r.enabled } : r)))
     } catch (err) {
-      console.error('切换重写规则状态失败:', err)
+      handleError(err, '切换重写规则状态失败')
     }
   }
 
@@ -104,7 +102,7 @@ export default function RewritePage() {
       await batchToggleRewrites(ids, enabled)
       setRules(rules.map((r) => ({ ...r, enabled })))
     } catch (err) {
-      console.error('批量操作失败:', err)
+      handleError(err, '批量操作失败')
     }
   }
 

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { getEnvironments, createEnvironment, updateEnvironment, deleteEnvironment, activateEnvironment } from '../services/environments'
 import type { Environment, EnvironmentVariable } from '../types'
+import { useErrorHandler } from '../lib/error-handler'
 
 export default function EnvironmentsPage() {
+  const handleError = useErrorHandler()
   const [environments, setEnvironments] = useState<Environment[]>([])
   const [selected, setSelected] = useState<Environment | null>(null)
   const [editingName, setEditingName] = useState('')
@@ -44,9 +46,7 @@ export default function EnvironmentsPage() {
         setSelected(updated)
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : '保存环境失败'
-      console.error('保存环境失败:', err)
-      alert(message)
+      handleError(err, '保存环境失败')
     }
   }
 
@@ -62,9 +62,7 @@ export default function EnvironmentsPage() {
       }
       setDeleteConfirm(null)
     } catch (err) {
-      const message = err instanceof Error ? err.message : '删除环境失败'
-      console.error('删除环境失败:', err)
-      alert(message)
+      handleError(err, '删除环境失败')
     }
   }
 
@@ -76,9 +74,7 @@ export default function EnvironmentsPage() {
         setSelected({ ...selected, active: true })
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : '激活环境失败'
-      console.error('激活环境失败:', err)
-      alert(message)
+      handleError(err, '激活环境失败')
     }
   }
 

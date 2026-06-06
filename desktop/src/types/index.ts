@@ -37,6 +37,13 @@ export interface ResponseData {
   content_type: string
 }
 
+// 流量事件（用于 Tauri 事件订阅）
+export interface TrafficEvent {
+  type: 'new' | 'update' | 'delete'
+  entry: Transaction
+  timestamp: string
+}
+
 // 流量统计（对应 Proto TrafficStats）
 export interface TrafficStats {
   total_requests: number
@@ -49,13 +56,6 @@ export interface TrafficStats {
   host_stats: Array<{ host: string; count: number; avg_time_ms: number }>
   method_stats: Array<{ method: string; count: number }>
   status_stats: Array<{ status_code: number; count: number }>
-}
-
-// WebSocket 消息
-export interface WsMessage {
-  type: string
-  payload: any
-  time: string
 }
 
 // 规则匹配条件 (与 rules.proto RuleMatch 对应)

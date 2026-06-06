@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getScripts, createScript, updateScript, deleteScript, toggleScript, testScript, batchToggleScripts } from '../services/scripts'
 import type { Script } from '../services/scripts'
+import { useErrorHandler } from '../lib/error-handler'
 
 const triggers = [
   { value: 'request', label: '请求阶段' },
@@ -52,6 +53,7 @@ const emptyScript: Partial<Script> = {
 }
 
 export default function ScriptsPage() {
+  const handleError = useErrorHandler()
   const [scripts, setScripts] = useState<Script[]>([])
   const [selected, setSelected] = useState<Script | null>(null)
   const [editing, setEditing] = useState<Partial<Script>>(emptyScript)
@@ -92,9 +94,7 @@ export default function ScriptsPage() {
         setSelected(updated)
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : '保存脚本失败'
-      console.error('保存脚本失败:', err)
-      alert(message)
+      handleError(err, '保存脚本失败')
     }
   }
 
@@ -109,9 +109,7 @@ export default function ScriptsPage() {
       }
       setDeleteConfirm(null)
     } catch (err) {
-      const message = err instanceof Error ? err.message : '删除脚本失败'
-      console.error('删除脚本失败:', err)
-      alert(message)
+      handleError(err, '删除脚本失败')
     }
   }
 
@@ -120,7 +118,7 @@ export default function ScriptsPage() {
       await toggleScript(script.id, !script.enabled)
       setScripts(scripts.map((s) => (s.id === script.id ? { ...s, enabled: !s.enabled } : s)))
     } catch (err) {
-      console.error('切换脚本状态失败:', err)
+      handleError(err, '切换脚本状态失败')
     }
   }
 
@@ -144,7 +142,7 @@ export default function ScriptsPage() {
       await batchToggleScripts(ids, enabled)
       setScripts(scripts.map((s) => ({ ...s, enabled })))
     } catch (err) {
-      console.error('批量操作失败:', err)
+      handleError(err, '批量操作失败')
     }
   }
 

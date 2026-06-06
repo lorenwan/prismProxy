@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { Rule, RuleMatch, RuleAction } from '../types'
 import { getRules, createRule, updateRule, deleteRule, toggleRule, batchToggleRules } from '../services/rules'
+import { useErrorHandler } from '../lib/error-handler'
 
 // 匹配类型选项
 const matchTypes = [
@@ -123,6 +124,7 @@ function formToRuleAction(form: RuleFormState): RuleAction {
 }
 
 export default function RulesPage() {
+  const handleError = useErrorHandler()
   const [rules, setRules] = useState<Rule[]>([])
   const [selected, setSelected] = useState<Rule | null>(null)
   const [editing, setEditing] = useState<RuleFormState>(emptyForm)
@@ -167,9 +169,7 @@ export default function RulesPage() {
         setSelected(updated)
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : '保存规则失败'
-      console.error('保存规则失败:', err)
-      alert(message)
+      handleError(err, '保存规则失败')
     }
   }
 
@@ -183,9 +183,7 @@ export default function RulesPage() {
       setEditing(emptyForm)
       setIsNew(false)
     } catch (err) {
-      const message = err instanceof Error ? err.message : '删除规则失败'
-      console.error('删除规则失败:', err)
-      alert(message)
+      handleError(err, '删除规则失败')
     }
   }
 
@@ -195,7 +193,7 @@ export default function RulesPage() {
       await toggleRule(rule.id, !rule.enabled)
       setRules(rules.map((r) => (r.id === rule.id ? { ...r, enabled: !r.enabled } : r)))
     } catch (err) {
-      console.error('切换规则状态失败:', err)
+      handleError(err, '切换规则状态失败')
     }
   }
 
@@ -206,7 +204,7 @@ export default function RulesPage() {
       await batchToggleRules(ids, enabled)
       setRules(rules.map((r) => ({ ...r, enabled })))
     } catch (err) {
-      console.error('批量操作失败:', err)
+      handleError(err, '批量操作失败')
     }
   }
 

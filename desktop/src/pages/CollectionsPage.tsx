@@ -10,10 +10,12 @@ import {
   importCollection,
 } from '../services/collections'
 import type { Collection, CollectionRequest } from '../types'
+import { useErrorHandler } from '../lib/error-handler'
 
 const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']
 
 export default function CollectionsPage() {
+  const handleError = useErrorHandler()
   const [collections, setCollections] = useState<Collection[]>([])
   const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null)
   const [selectedRequest, setSelectedRequest] = useState<CollectionRequest | null>(null)
@@ -94,9 +96,7 @@ export default function CollectionsPage() {
         setEditingRequest(updated)
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : '保存请求失败'
-      console.error('保存请求失败:', err)
-      alert(message)
+      handleError(err, '保存请求失败')
     }
   }
 
@@ -115,9 +115,7 @@ export default function CollectionsPage() {
       setEditingRequest({})
       setIsNewRequest(false)
     } catch (err) {
-      const message = err instanceof Error ? err.message : '删除请求失败'
-      console.error('删除请求失败:', err)
-      alert(message)
+      handleError(err, '删除请求失败')
     }
   }
 
@@ -130,9 +128,7 @@ export default function CollectionsPage() {
       setNewCollectionName('')
       setShowNewCollection(false)
     } catch (err) {
-      const message = err instanceof Error ? err.message : '创建集合失败'
-      console.error('创建集合失败:', err)
-      alert(message)
+      handleError(err, '创建集合失败')
     }
   }
 
@@ -147,9 +143,7 @@ export default function CollectionsPage() {
         setEditingRequest({})
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : '删除集合失败'
-      console.error('删除集合失败:', err)
-      alert(message)
+      handleError(err, '删除集合失败')
     }
   }
 
@@ -169,7 +163,7 @@ export default function CollectionsPage() {
       })
       setResponse(result)
     } catch (err) {
-      console.error(err)
+      handleError(err, '发送请求失败')
     } finally {
       setSending(false)
     }
@@ -186,7 +180,7 @@ export default function CollectionsPage() {
       const imported = await importCollection(file)
       setCollections([...collections, imported])
     } catch (err) {
-      console.error(err)
+      handleError(err, '导入集合失败')
     }
     e.target.value = ''
   }

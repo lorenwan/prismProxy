@@ -1,5 +1,4 @@
 import { invoke } from '@tauri-apps/api/core'
-import { listen } from '@tauri-apps/api/event'
 
 // --- 类型定义 ---
 
@@ -95,23 +94,6 @@ export async function deleteTraffic(ids: string[]): Promise<void> {
  */
 export async function clearTraffic(): Promise<void> {
   return invoke('clear_traffic')
-}
-
-/**
- * 订阅流量事件（服务端流式推送）
- * @param callback 事件回调函数
- * @returns 取消订阅的函数
- */
-export async function subscribeTraffic(callback: (event: any) => void): Promise<() => void> {
-  // 启动订阅
-  await invoke('subscribe_traffic')
-
-  // 监听事件
-  const unlisten = await listen('traffic:event', (event) => {
-    callback(JSON.parse(event.payload as string))
-  })
-
-  return unlisten
 }
 
 // --- 向后兼容的别名函数 ---

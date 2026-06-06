@@ -43,23 +43,25 @@ export default function App() {
               {/* 头部工具栏 */}
               <Header />
 
-              {/* 路由内容 - Suspense 包裹懒加载页面 */}
+              {/* 路由内容 - ErrorBoundary 包裹 Suspense，正确捕获懒加载失败 */}
               <main className="flex-1 overflow-hidden bg-[var(--bg-primary)]" role="main">
-                <Suspense fallback={<PageLoading />}>
-                  <Routes>
-                    <Route path="/" element={<ErrorBoundary><TrafficPage /></ErrorBoundary>} />
-                    <Route path="/rules" element={<ErrorBoundary><RulesPage /></ErrorBoundary>} />
-                    <Route path="/breakpoints" element={<ErrorBoundary><BreakpointsPage /></ErrorBoundary>} />
-                    <Route path="/ai" element={<ErrorBoundary><AiPage /></ErrorBoundary>} />
-                    <Route path="/settings" element={<ErrorBoundary><SettingsPage /></ErrorBoundary>} />
-                    <Route path="/rewrite" element={<ErrorBoundary><RewritePage /></ErrorBoundary>} />
-                    <Route path="/collections" element={<ErrorBoundary><CollectionsPage /></ErrorBoundary>} />
-                    <Route path="/environments" element={<ErrorBoundary><EnvironmentsPage /></ErrorBoundary>} />
-                    <Route path="/scripts" element={<ErrorBoundary><ScriptsPage /></ErrorBoundary>} />
-                    <Route path="/diff" element={<ErrorBoundary><DiffPage /></ErrorBoundary>} />
-                    <Route path="/performance" element={<ErrorBoundary><PerformancePage /></ErrorBoundary>} />
-                  </Routes>
-                </Suspense>
+                <ErrorBoundary>
+                  <Suspense fallback={<PageLoading />}>
+                    <Routes>
+                      <Route path="/" element={<TrafficPage />} />
+                      <Route path="/rules" element={<RulesPage />} />
+                      <Route path="/breakpoints" element={<BreakpointsPage />} />
+                      <Route path="/ai" element={<AiPage />} />
+                      <Route path="/settings" element={<SettingsPage />} />
+                      <Route path="/rewrite" element={<RewritePage />} />
+                      <Route path="/collections" element={<CollectionsPage />} />
+                      <Route path="/environments" element={<EnvironmentsPage />} />
+                      <Route path="/scripts" element={<ScriptsPage />} />
+                      <Route path="/diff" element={<DiffPage />} />
+                      <Route path="/performance" element={<PerformancePage />} />
+                    </Routes>
+                  </Suspense>
+                </ErrorBoundary>
               </main>
 
               {/* 状态栏 */}

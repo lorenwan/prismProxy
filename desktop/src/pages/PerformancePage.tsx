@@ -37,7 +37,7 @@ export default function PerformancePage() {
   const p50 = selected?.results?.p50Ms ?? 0
   const p90 = selected?.results?.p90Ms ?? 0
   const p99 = selected?.results?.p99Ms ?? 0
-  const errorRate = selected?.results?.slowRequests ?? 0
+  const slowRequestCount = selected?.results?.slowRequests ?? 0
 
   // 慢请求：取所有报告中 p90 以上的请求 - 缓存排序结果
   const slowRequests = useMemo(
@@ -99,7 +99,7 @@ export default function PerformancePage() {
             { label: '平均耗时', value: `${avgDuration}ms`, color: 'var(--green)' },
             { label: 'P50', value: `${p50}ms`, color: 'var(--yellow)' },
             { label: 'P90', value: `${p90}ms`, color: 'var(--yellow)' },
-            { label: '慢请求', value: `${errorRate}`, color: 'var(--red)' },
+            { label: '慢请求', value: `${slowRequestCount}`, color: 'var(--red)' },
           ].map((card) => (
             <div key={card.label} className="bg-[var(--bg-inset)] border border-[var(--border)] rounded p-3">
               <div className="text-xs text-[var(--text-tertiary)] mb-1">{card.label}</div>

@@ -1,33 +1,15 @@
 import { useEffect, useState, useCallback } from 'react'
+import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import TrafficList from '../features/traffic/components/TrafficList'
 import TrafficDetail from '../features/traffic/components/TrafficDetail'
 import { useTrafficStore } from '../features/traffic/trafficStore'
 import { getTrafficList } from '../features/traffic/trafficService'
-import type { WsMessage, Transaction } from '../types'
+import type { TrafficEvent, Transaction } from '../types'
 
 export default function TrafficPage() {
-  const { setTrafficList, setLoading, addTraffic, removeTraffic, clearTraffic } = useTrafficStore()
+  const { setTrafficList, addTraffic, updateTraffic, removeTraffic, setLoading } = useTrafficStore()
   const [error, setError] = useState<string | null>(null)
-
-  // 监听 Tauri 事件
-  useEffect(() => {
-    const unlisten = listen('traffic:event', (event) => {
-      const msg = event.payload as WsMessage
-      switch (msg.type) {
-        case 'traffic:new':
-          addTraffic(msg.payload as Transaction)
-          break
-        case 'traffic:delete':
-          removeTraffic(msg.payload.id)
-          break
-        case 'traffic:clear':
-          clearTraffic()
-          break
-      }
-    })
-    return () => { unlisten.then(fn => fn()) }
-  }, [addTraffic, removeTraffic, clearTraffic])
 
   // 加载初始数据
   const loadTraffic = useCallback(async () => {
@@ -44,6 +26,32 @@ export default function TrafficPage() {
       setLoading(false)
     }
   }, [setTrafficList, setLoading])
+
+  // 启动事件订阅
+  useEffect(() => {
+    invoke('subscribe_traffic').catch(console.error)
+
+    const unlisten = listen('traffic:event', (event) => {
+      try {
+        const msg = JSON.parse(event.payload as string) as TrafficEvent
+        switch (msg.type) {
+          case 'new':
+            addTraffic(msg.entry as Transaction)
+            break
+          case 'update':
+            updateTraffic(msg.entry as Transaction)
+            break
+          case 'delete':
+            removeTraffic(String(msg.entry.id))
+            break
+        }
+      } catch (err) {
+        console.error('处理流量事件失败:', err)
+      }
+    })
+
+    return () => { unlisten.then(fn => fn()) }
+  }, [addTraffic, updateTraffic, removeTraffic])
 
   useEffect(() => {
     loadTraffic()

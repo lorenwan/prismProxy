@@ -9,6 +9,7 @@ import {
   getActiveSessions,
   resumeSession,
 } from '../services/breakpoints'
+import { useErrorHandler } from '../lib/error-handler'
 
 // 简化表单状态（用于 UI 编辑）
 interface BreakpointFormState {
@@ -68,6 +69,7 @@ function formToMatch(form: BreakpointFormState): RuleMatch {
 }
 
 export default function BreakpointsPage() {
+  const handleError = useErrorHandler()
   const [breakpoints, setBreakpoints] = useState<Breakpoint[]>([])
   const [sessions, setSessions] = useState<BreakpointSession[]>([])
   const [selected, setSelected] = useState<Breakpoint | null>(null)
@@ -114,9 +116,7 @@ export default function BreakpointsPage() {
         setSelected(updated)
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : '保存断点失败'
-      console.error('保存断点失败:', err)
-      alert(message)
+      handleError(err, '保存断点失败')
     }
   }
 
@@ -130,9 +130,7 @@ export default function BreakpointsPage() {
       setEditing(emptyForm)
       setIsNew(false)
     } catch (err) {
-      const message = err instanceof Error ? err.message : '删除断点失败'
-      console.error('删除断点失败:', err)
-      alert(message)
+      handleError(err, '删除断点失败')
     }
   }
 
@@ -142,7 +140,7 @@ export default function BreakpointsPage() {
       await toggleBreakpoint(bp.id, !bp.enabled)
       setBreakpoints(breakpoints.map((b) => (b.id === bp.id ? { ...b, enabled: !b.enabled } : b)))
     } catch (err) {
-      console.error('切换断点状态失败:', err)
+      handleError(err, '切换断点状态失败')
     }
   }
 
@@ -152,9 +150,7 @@ export default function BreakpointsPage() {
       await resumeSession(sessionId)
       setSessions(sessions.filter((s) => s.id !== sessionId))
     } catch (err) {
-      const message = err instanceof Error ? err.message : '恢复会话失败'
-      console.error('恢复会话失败:', err)
-      alert(message)
+      handleError(err, '恢复会话失败')
     }
   }
 

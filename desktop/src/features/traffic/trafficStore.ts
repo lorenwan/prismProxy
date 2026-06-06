@@ -18,6 +18,7 @@ interface TrafficState {
   // Actions
   setTrafficList: (list: Transaction[]) => void
   addTraffic: (item: Transaction) => void
+  updateTraffic: (item: Transaction) => void
   removeTraffic: (id: string) => void
   clearTraffic: () => void
   setSelectedId: (id: string | null) => void
@@ -35,6 +36,10 @@ export const useTrafficStore = create<TrafficState>((set) => ({
 
   addTraffic: (item) => set((state) => ({
     trafficList: [item, ...state.trafficList]
+  })),
+
+  updateTraffic: (item) => set((state) => ({
+    trafficList: state.trafficList.map(t => t.id === item.id ? item : t)
   })),
 
   removeTraffic: (id) => set((state) => ({
